@@ -57,12 +57,18 @@ final class human_criterion_repository {
         if (!$DB->record_exists('assign_grades', ['id' => $gradeid, 'assignment' => $assignmentid])) {
             throw new \invalid_parameter_exception('The grade does not belong to the assignment.');
         }
-        if ($jobid !== null && !$DB->record_exists('assignfeedback_aitutoria_job', [
-            'id' => $jobid,
-            'assignment' => $assignmentid,
-            'grade' => $gradeid,
-            'status' => job_repository::STATUS_COMPLETE,
-        ])) {
+        if (
+            $jobid !== null
+            && !$DB->record_exists(
+                'assignfeedback_aitutoria_job',
+                [
+                    'id' => $jobid,
+                    'assignment' => $assignmentid,
+                    'grade' => $gradeid,
+                    'status' => job_repository::STATUS_COMPLETE,
+                ]
+            )
+        ) {
             throw new \invalid_parameter_exception('Criterion reviews may link only to a completed matching job.');
         }
 
@@ -122,7 +128,7 @@ final class human_criterion_repository {
             $matchesai = $aiproposedlevel === null ? null : (int) ($aiproposedlevel === $selectedlevel);
             if ($matchesai === 1) {
                 $summary['matched']++;
-            } else if ($matchesai === 0) {
+            } elseif ($matchesai === 0) {
                 $summary['mismatched']++;
             }
 
