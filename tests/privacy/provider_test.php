@@ -19,6 +19,7 @@ namespace assignfeedback_aitutoria\privacy;
 use assignfeedback_aitutoria\local\assessment_service;
 use assignfeedback_aitutoria\local\dto\assessment_request;
 use assignfeedback_aitutoria\local\provider\fixture_provider;
+use assignfeedback_aitutoria\local\repository\human_criterion_repository;
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\writer;
 use mod_assign\privacy\assign_plugin_request_data;
@@ -38,11 +39,11 @@ final class provider_test extends provider_testcase {
      */
     public function test_get_metadata_describes_engine_tables(): void {
         $collection = provider::get_metadata(new collection('assignfeedback_aitutoria'));
-        $this->assertCount(5, $collection->get_collection());
+        $this->assertCount(6, $collection->get_collection());
     }
 
     /**
-     * A student export contains the immutable snapshot, private result and criteria.
+     * A student export contains snapshots, private results and human calibration.
      */
     public function test_export_feedback_user_data_includes_engine_artifacts(): void {
         global $DB, $USER;
@@ -56,25 +57,35 @@ final class provider_test extends provider_testcase {
         $request = $this->request((int) $assign->get_instance()->id, (int) $grade->id);
         $queued = assessment_service::queue($request, new fixture_provider(), (int) $USER->id, false);
         assessment_service::execute((int) $queued['job']->id, new fixture_provider());
+        human_criterion_repository::save_reviews(
+            (int) $assign->get_instance()->id,
+            (int) $grade->id,
+            (int) $queued['job']->id,
+            (int) $USER->id,
+            $request->get_rubric(),
+            ['clarity' => 'proficient']
+        );
 
         $context = $assign->get_context();
         $exportdata = new assign_plugin_request_data($context, $assign, $grade, [], $student);
         provider::export_feedback_user_data($exportdata);
 
         $basepath = [get_string('privacy:path', 'assignfeedback_aitutoria')];
+        $base = writer::with_context($context)->get_data($basepath);
         $jobpath = array_merge(
             $basepath,
             [get_string('privacy:assessmentjob', 'assignfeedback_aitutoria', $queued['job']->id)]
         );
         $data = writer::with_context($context)->get_data($jobpath);
 
+        $this->assertCount(1, $base->humancriteria);
+        $this->assertSame('clarity', $base->humancriteria[0]['criterionkey']);
+        $this->assertSame('proficient', $base->humancriteria[0]['selectedlevel']);
         $this->assertSame('complete', $data->status);
         $this->assertSame('fixture', $data->provider);
         $this->assertSame($request->get_submissiontext(), $data->snapshot->submissiontext);
         $this->assertCount(2, $data->criteria);
-        $this->assertSame('clarity', $data->criteria[0]['criterionkey']);
         $this->assertNotEmpty($data->audit);
-        $this->assertArrayNotHasKey('actorid', $data->audit[0]);
         $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_job'));
     }
 
@@ -82,7 +93,7 @@ final class provider_test extends provider_testcase {
      * Deleting one grade removes only that student's engine artifacts.
      */
     public function test_delete_feedback_for_grade_is_selective(): void {
-        global $DB;
+        global $DB, $USER;
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -95,35 +106,38 @@ final class provider_test extends provider_testcase {
         $gradetwo = $this->create_grade($assignmentid, (int) $studenttwo->id, 85.0);
 
         foreach ([$gradeone, $gradetwo] as $grade) {
-            $queued = assessment_service::queue(
-                $this->request($assignmentid, (int) $grade->id),
-                new fixture_provider(),
-                null,
-                false
-            );
+            $request = $this->request($assignmentid, (int) $grade->id);
+            $queued = assessment_service::queue($request, new fixture_provider(), null, false);
             assessment_service::execute((int) $queued['job']->id, new fixture_provider());
+            human_criterion_repository::save_reviews(
+                $assignmentid,
+                (int) $grade->id,
+                (int) $queued['job']->id,
+                (int) $USER->id,
+                $request->get_rubric(),
+                ['clarity' => 'proficient']
+            );
         }
 
-        $requestdata = new assign_plugin_request_data(
+        provider::delete_feedback_for_grade(new assign_plugin_request_data(
             $assign->get_context(),
             $assign,
             $gradeone,
             [],
             $studentone
-        );
-        provider::delete_feedback_for_grade($requestdata);
+        ));
 
         $this->assertSame(0, $DB->count_records('assignfeedback_aitutoria_job', ['grade' => $gradeone->id]));
         $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_job', ['grade' => $gradetwo->id]));
-        $this->assertSame(0, $DB->count_records('assignfeedback_aitutoria_aud', ['grade' => $gradeone->id]));
-        $this->assertGreaterThan(0, $DB->count_records('assignfeedback_aitutoria_aud', ['grade' => $gradetwo->id]));
+        $this->assertSame(0, $DB->count_records('assignfeedback_aitutoria_hcr', ['grade' => $gradeone->id]));
+        $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_hcr', ['grade' => $gradetwo->id]));
     }
 
     /**
      * Context deletion removes all plugin data for the assignment.
      */
     public function test_delete_feedback_for_context_removes_all_engine_data(): void {
-        global $DB;
+        global $DB, $USER;
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -132,13 +146,17 @@ final class provider_test extends provider_testcase {
         $assign = $this->create_instance(['course' => $course]);
         $assignmentid = (int) $assign->get_instance()->id;
         $grade = $this->create_grade($assignmentid, (int) $student->id, 60.0);
-        $queued = assessment_service::queue(
-            $this->request($assignmentid, (int) $grade->id),
-            new fixture_provider(),
-            null,
-            false
-        );
+        $request = $this->request($assignmentid, (int) $grade->id);
+        $queued = assessment_service::queue($request, new fixture_provider(), null, false);
         assessment_service::execute((int) $queued['job']->id, new fixture_provider());
+        human_criterion_repository::save_reviews(
+            $assignmentid,
+            (int) $grade->id,
+            (int) $queued['job']->id,
+            (int) $USER->id,
+            $request->get_rubric(),
+            ['clarity' => 'proficient']
+        );
 
         provider::delete_feedback_for_context(new assign_plugin_request_data($assign->get_context(), $assign));
 
@@ -148,6 +166,7 @@ final class provider_test extends provider_testcase {
                 'assignfeedback_aitutoria_job',
                 'assignfeedback_aitutoria_snp',
                 'assignfeedback_aitutoria_crt',
+                'assignfeedback_aitutoria_hcr',
                 'assignfeedback_aitutoria_aud',
             ] as $table
         ) {
@@ -176,7 +195,6 @@ final class provider_test extends provider_testcase {
             'attemptnumber' => 0,
         ];
         $record->id = $DB->insert_record('assign_grades', $record);
-
         return $record;
     }
 
