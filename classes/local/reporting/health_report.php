@@ -34,6 +34,7 @@ final class health_report {
         'assignfeedback_aitutoria_job',
         'assignfeedback_aitutoria_snp',
         'assignfeedback_aitutoria_crt',
+        'assignfeedback_aitutoria_hcr',
         'assignfeedback_aitutoria_aud',
     ];
 
@@ -60,42 +61,28 @@ final class health_report {
             }
         }
 
-        $jobcounts = [
-            'queued' => 0,
-            'processing' => 0,
-            'complete' => 0,
-            'failed' => 0,
-        ];
+        $jobcounts = ['queued' => 0, 'processing' => 0, 'complete' => 0, 'failed' => 0];
         $staleprocessing = 0;
         $overduequeued = 0;
         $recentfailures = [];
-
         $timeoutminutes = (int) get_config('assignfeedback_aitutoria', 'processingtimeoutminutes');
         if ($timeoutminutes < 1) {
             $timeoutminutes = 15;
         }
         if ($tables['assignfeedback_aitutoria_job']) {
             foreach (array_keys($jobcounts) as $status) {
-                $jobcounts[$status] = $DB->count_records(
-                    'assignfeedback_aitutoria_job',
-                    ['status' => $status]
-                );
+                $jobcounts[$status] = $DB->count_records('assignfeedback_aitutoria_job', ['status' => $status]);
             }
-
             $staleprocessing = $DB->count_records_select(
                 'assignfeedback_aitutoria_job',
                 'status = :status AND timemodified < :cutoff',
-                [
-                    'status' => 'processing',
-                    'cutoff' => time() - ($timeoutminutes * MINSECS),
-                ]
+                ['status' => 'processing', 'cutoff' => time() - ($timeoutminutes * MINSECS)]
             );
             $overduequeued = $DB->count_records_select(
                 'assignfeedback_aitutoria_job',
                 'status = :status AND timeavailable > 0 AND timeavailable < :now',
                 ['status' => 'queued', 'now' => time()]
             );
-
             $failures = $DB->get_records(
                 'assignfeedback_aitutoria_job',
                 ['status' => 'failed'],
@@ -197,7 +184,6 @@ final class health_report {
                 'error' => null,
             ];
         }
-
         try {
             $framework = institutional_framework_parser::parse($json);
             return [
