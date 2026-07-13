@@ -63,7 +63,7 @@ final class idempotency {
                 self::normalize($value),
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
             );
-        } catch (\JsonException $exception) {
+        } catch (\JsonException) {
             throw new \invalid_parameter_exception('Could not create an idempotency fingerprint.');
         }
     }
@@ -79,8 +79,7 @@ final class idempotency {
             return $value;
         }
 
-        $islist = array_keys($value) === range(0, count($value) - 1);
-        if ($islist) {
+        if (array_is_list($value)) {
             return array_map([self::class, 'normalize'], $value);
         }
 
