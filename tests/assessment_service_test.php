@@ -122,8 +122,8 @@ final class assessment_service_test extends \advanced_testcase {
             try {
                 assessment_service::execute($jobid, $provider);
                 $this->fail('The failing provider must throw.');
-            } catch (\runtime_exception) {
-                // Expected provider failure.
+            } catch (\runtime_exception $exception) {
+                $this->assertSame('Synthetic provider failure.', $exception->getMessage());
             }
         }
 
@@ -211,17 +211,29 @@ final class assessment_service_test extends \advanced_testcase {
      */
     private function failing_provider(): provider_interface {
         return new class implements provider_interface {
-            /** @return string Provider name. */
+            /**
+             * Return the failing fixture provider name.
+             *
+             * @return string Provider name.
+             */
             public function get_name(): string {
                 return 'failing-fixture';
             }
 
-            /** @return string Model name. */
+            /**
+             * Return the failing fixture model name.
+             *
+             * @return string Model name.
+             */
             public function get_model(): string {
                 return 'failure-v1';
             }
 
-            /** @return string Prompt version. */
+            /**
+             * Return the failing fixture prompt version.
+             *
+             * @return string Prompt version.
+             */
             public function get_promptversion(): string {
                 return 'failure-prompt-v1';
             }
