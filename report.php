@@ -35,7 +35,6 @@ $assignmentid = optional_param('assignmentid', 0, PARAM_INT);
 $format = optional_param('format', 'html', PARAM_ALPHA);
 $urlparams = $assignmentid > 0 ? ['assignmentid' => $assignmentid] : [];
 $url = new moodle_url('/mod/assign/feedback/aitutoria/report.php', $urlparams);
-
 $health = health_report::build();
 $governance = governance_report::build($assignmentid > 0 ? $assignmentid : null);
 
@@ -54,18 +53,15 @@ $PAGE->set_context($context);
 $PAGE->set_pagelayout('admin');
 $PAGE->set_title(get_string('governancereport', 'assignfeedback_aitutoria'));
 $PAGE->set_heading(get_string('governancereport', 'assignfeedback_aitutoria'));
-
 $downloadurl = new moodle_url('/mod/assign/feedback/aitutoria/report.php', $urlparams + ['format' => 'json']);
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('governancereport', 'assignfeedback_aitutoria'));
-echo html_writer::div(
-    html_writer::link(
-        $downloadurl,
-        get_string('downloadreportjson', 'assignfeedback_aitutoria'),
-        ['class' => 'btn btn-secondary mb-3']
-    )
-);
+echo html_writer::div(html_writer::link(
+    $downloadurl,
+    get_string('downloadreportjson', 'assignfeedback_aitutoria'),
+    ['class' => 'btn btn-secondary mb-3']
+));
 
 echo $OUTPUT->heading(get_string('healthstatus', 'assignfeedback_aitutoria'), 3);
 $statusclass = $health['status'] === 'ok'
@@ -75,23 +71,16 @@ echo html_writer::div(
     get_string('healthstatus_' . $health['status'], 'assignfeedback_aitutoria'),
     $statusclass
 );
-
 if (!empty($health['issues'])) {
     $items = [];
     foreach ($health['issues'] as $issue) {
-        $items[] = html_writer::tag(
-            'strong',
-            s(strtoupper($issue['severity']))
-        ) . ': ' . s($issue['message']);
+        $items[] = html_writer::tag('strong', s(strtoupper($issue['severity']))) . ': ' . s($issue['message']);
     }
     echo html_writer::alist($items);
 }
 
 $healthtable = new html_table();
-$healthtable->head = [
-    get_string('metric', 'assignfeedback_aitutoria'),
-    get_string('value', 'assignfeedback_aitutoria'),
-];
+$healthtable->head = [get_string('metric', 'assignfeedback_aitutoria'), get_string('value', 'assignfeedback_aitutoria')];
 $healthtable->data = [
     [get_string('allowaisuggestions', 'assignfeedback_aitutoria'), $health['settings']['allowaisuggestions'] ? get_string('yes') : get_string('no')],
     [get_string('retentiondays', 'assignfeedback_aitutoria'), (string) $health['settings']['retentiondays']],
@@ -106,10 +95,7 @@ echo html_writer::table($healthtable);
 
 echo $OUTPUT->heading(get_string('jobstatus', 'assignfeedback_aitutoria'), 3);
 $jobtable = new html_table();
-$jobtable->head = [
-    get_string('status'),
-    get_string('count', 'assignfeedback_aitutoria'),
-];
+$jobtable->head = [get_string('status'), get_string('count', 'assignfeedback_aitutoria')];
 foreach ($health['jobs']['status'] as $status => $count) {
     $jobtable->data[] = [s($status), (string) $count];
 }
@@ -141,10 +127,7 @@ if (!empty($health['jobs']['recentfailures'])) {
 
 echo $OUTPUT->heading(get_string('governancemetrics', 'assignfeedback_aitutoria'), 3);
 $governancetable = new html_table();
-$governancetable->head = [
-    get_string('metric', 'assignfeedback_aitutoria'),
-    get_string('value', 'assignfeedback_aitutoria'),
-];
+$governancetable->head = [get_string('metric', 'assignfeedback_aitutoria'), get_string('value', 'assignfeedback_aitutoria')];
 $governancetable->data = [
     [get_string('totaljobs', 'assignfeedback_aitutoria'), (string) $governance['jobs']['total']],
     [get_string('averageadvisorypercentage', 'assignfeedback_aitutoria'), $governance['jobs']['averageadvisorypercentage'] === null ? '-' : $governance['jobs']['averageadvisorypercentage'] . '%'],
@@ -152,7 +135,32 @@ $governancetable->data = [
     [get_string('requiringhumanreview', 'assignfeedback_aitutoria'), (string) $governance['criteria']['requiringhumanreview']],
     [get_string('humanreviews', 'assignfeedback_aitutoria'), (string) $governance['humanreview']['total']],
     [get_string('acceptancerate', 'assignfeedback_aitutoria'), $governance['humanreview']['acceptancerate'] === null ? '-' : $governance['humanreview']['acceptancerate'] . '%'],
+    [get_string('calibrationreviews', 'assignfeedback_aitutoria'), (string) $governance['calibration']['total']],
+    [get_string('calibrationcompared', 'assignfeedback_aitutoria'), (string) $governance['calibration']['compared']],
+    [get_string('agreementrate', 'assignfeedback_aitutoria'), $governance['calibration']['agreementrate'] === null ? '-' : $governance['calibration']['agreementrate'] . '%'],
 ];
 echo html_writer::table($governancetable);
+
+if (!empty($governance['calibration']['percriterion'])) {
+    echo $OUTPUT->heading(get_string('criterionagreement', 'assignfeedback_aitutoria'), 3);
+    $criteriontable = new html_table();
+    $criteriontable->head = [
+        get_string('criterion', 'gradingform_rubric'),
+        get_string('calibrationcompared', 'assignfeedback_aitutoria'),
+        get_string('calibrationmatched', 'assignfeedback_aitutoria'),
+        get_string('calibrationmismatched', 'assignfeedback_aitutoria'),
+        get_string('agreementrate', 'assignfeedback_aitutoria'),
+    ];
+    foreach ($governance['calibration']['percriterion'] as $criterionkey => $metrics) {
+        $criteriontable->data[] = [
+            s($criterionkey),
+            (string) $metrics['compared'],
+            (string) $metrics['matched'],
+            (string) $metrics['mismatched'],
+            $metrics['agreementrate'] === null ? '-' : $metrics['agreementrate'] . '%',
+        ];
+    }
+    echo html_writer::table($criteriontable);
+}
 
 echo $OUTPUT->footer();
