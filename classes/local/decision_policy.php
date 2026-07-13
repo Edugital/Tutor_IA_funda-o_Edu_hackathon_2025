@@ -68,11 +68,13 @@ final class decision_policy {
         $suggestion = trim($suggestion);
         $action = trim($action);
 
-        if (!in_array(
-            $action,
-            [self::ACTION_MANUAL, self::ACTION_ACCEPT, self::ACTION_REJECT, self::ACTION_ESCALATE],
-            true
-        )) {
+        if (
+            !in_array(
+                $action,
+                [self::ACTION_MANUAL, self::ACTION_ACCEPT, self::ACTION_REJECT, self::ACTION_ESCALATE],
+                true
+            )
+        ) {
             throw new \invalid_parameter_exception('Unknown Human in Control review action.');
         }
 
