@@ -20,6 +20,7 @@ use assignfeedback_aitutoria\local\assessment_service;
 use assignfeedback_aitutoria\local\dto\assessment_request;
 use assignfeedback_aitutoria\local\feedback_repository;
 use assignfeedback_aitutoria\local\provider\fixture_provider;
+use assignfeedback_aitutoria\local\repository\human_criterion_repository;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -36,7 +37,7 @@ require_once($CFG->dirroot . '/backup/tests/backup_restore_base_testcase.php');
  */
 final class backup_restore_test extends \core_backup_backup_restore_base_testcase {
     /**
-     * Completed assessment data survives course backup and restore.
+     * Completed assessment and calibration data survive course restore.
      */
     public function test_completed_engine_data_is_restored_with_new_mappings(): void {
         global $DB, $USER;
@@ -68,6 +69,14 @@ final class backup_restore_test extends \core_backup_backup_restore_base_testcas
             'Official feedback preserved by backup.',
             false
         );
+        human_criterion_repository::save_reviews(
+            (int) $assign->id,
+            (int) $gradeid,
+            (int) $queued['job']->id,
+            (int) $USER->id,
+            $request->get_rubric(),
+            ['clarity' => 'proficient', 'evidence' => 'developing']
+        );
 
         $backupid = $this->perform_backup($source);
         $this->perform_restore($backupid, $destination);
@@ -96,6 +105,7 @@ final class backup_restore_test extends \core_backup_backup_restore_base_testcas
             '*',
             MUST_EXIST
         );
+        $restoredreviews = human_criterion_repository::get_for_grade((int) $restoredgrade->id);
 
         $this->assertSame('Official feedback preserved by backup.', $restoredfeedback->feedbacktext);
         $this->assertSame('complete', $restoredjob->status);
@@ -104,6 +114,9 @@ final class backup_restore_test extends \core_backup_backup_restore_base_testcas
         $this->assertNotEmpty($restoredjob->scoringjson);
         $this->assertTrue($DB->record_exists('assignfeedback_aitutoria_snp', ['jobid' => $restoredjob->id]));
         $this->assertSame(2, $DB->count_records('assignfeedback_aitutoria_crt', ['jobid' => $restoredjob->id]));
+        $this->assertSame(2, count($restoredreviews));
+        $this->assertSame((int) $restoredjob->id, (int) $restoredreviews['clarity']->jobid);
+        $this->assertSame((int) $USER->id, (int) $restoredreviews['clarity']->reviewerid);
         $this->assertGreaterThanOrEqual(
             2,
             $DB->count_records('assignfeedback_aitutoria_aud', [
