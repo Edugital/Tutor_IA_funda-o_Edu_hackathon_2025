@@ -16,7 +16,7 @@ O diretório raiz deste repositório corresponde a:
 
 ## Estado do produto
 
-**Versão:** `0.2.0-recovery`  
+**Versão:** `0.2.1-recovery`  
 **Maturidade:** alpha  
 **Moodle mínimo:** 4.4  
 **Política:** Human in Control
@@ -37,7 +37,9 @@ Esta baseline foi recuperada de uma implementação legada e reorganizada para s
 - migração não destrutiva da configuração legada documentada;
 - português do Brasil e inglês;
 - testes da política determinística de decisão humana;
-- validação estática e empacotamento ZIP reproduzível.
+- validação estática e empacotamento ZIP reproduzível;
+- instalação automatizada em Moodle 4.4/MariaDB e Moodle 4.5/PostgreSQL;
+- PHPUnit, Behat, savepoints, PHPDoc e lint executados pelo Moodle Plugin CI.
 
 ## Garantias Human in Control
 
@@ -78,7 +80,7 @@ vendor/bin/phpunit --testsuite assignfeedback_aitutoria_testsuite
 
 ## Próximas frentes
 
-- testes de banco e Behat em Moodle real;
+- teste de atualização sobre cópia sanitizada do banco legado real;
 - rubricas estruturadas e versionadas;
 - motor assíncrono e idempotente;
 - avaliação por critério, evidências e incerteza;
