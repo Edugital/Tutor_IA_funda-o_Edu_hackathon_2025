@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/assign/feedback/aitutoria/db" VERSION="2026071302" COMMENT="XMLDB file for AI Tutoring assignment feedback"
+<XMLDB PATH="mod/assign/feedback/aitutoria/db" VERSION="2026071303" COMMENT="XMLDB file for AI Tutoring assignment feedback"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd">
   <TABLES>
@@ -92,6 +92,32 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="jobcriterion" UNIQUE="true" FIELDS="jobid,criterionkey"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="assignfeedback_aitutoria_hcr" COMMENT="Final human rubric selections for calibration">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="grade" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="jobid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="criterionkey" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="selectedlevel" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="aiproposedlevel" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="matchesai" TYPE="int" LENGTH="1" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="reviewerid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="assignment" TYPE="foreign" FIELDS="assignment" REFTABLE="assign" REFFIELDS="id"/>
+        <KEY NAME="grade" TYPE="foreign" FIELDS="grade" REFTABLE="assign_grades" REFFIELDS="id"/>
+        <KEY NAME="jobid" TYPE="foreign" FIELDS="jobid" REFTABLE="assignfeedback_aitutoria_job" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="gradecriterion" UNIQUE="true" FIELDS="grade,criterionkey"/>
+        <INDEX NAME="assignmentgrade" UNIQUE="false" FIELDS="assignment,grade"/>
+        <INDEX NAME="reviewerid" UNIQUE="false" FIELDS="reviewerid"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="assignfeedback_aitutoria_aud" COMMENT="Minimal audit trail for processing and human decisions">
