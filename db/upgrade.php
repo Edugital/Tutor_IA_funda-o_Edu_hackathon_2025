@@ -206,5 +206,38 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026071302, 'assignfeedback', 'aitutoria');
     }
 
+    if ($oldversion < 2026071303) {
+        $humancriteriontable = new xmldb_table('assignfeedback_aitutoria_hcr');
+        if (!$dbman->table_exists($humancriteriontable)) {
+            $humancriteriontable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $humancriteriontable->add_field('assignment', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $humancriteriontable->add_field('grade', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $humancriteriontable->add_field('jobid', XMLDB_TYPE_INTEGER, '10', null, null);
+            $humancriteriontable->add_field('criterionkey', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $humancriteriontable->add_field('selectedlevel', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $humancriteriontable->add_field('aiproposedlevel', XMLDB_TYPE_CHAR, '100', null, null);
+            $humancriteriontable->add_field('matchesai', XMLDB_TYPE_INTEGER, '1', null, null);
+            $humancriteriontable->add_field('reviewerid', XMLDB_TYPE_INTEGER, '10', null, null);
+            $humancriteriontable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $humancriteriontable->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $humancriteriontable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $humancriteriontable->add_key('assignment', XMLDB_KEY_FOREIGN, ['assignment'], 'assign', ['id']);
+            $humancriteriontable->add_key('grade', XMLDB_KEY_FOREIGN, ['grade'], 'assign_grades', ['id']);
+            $humancriteriontable->add_key(
+                'jobid',
+                XMLDB_KEY_FOREIGN,
+                ['jobid'],
+                'assignfeedback_aitutoria_job',
+                ['id']
+            );
+            $humancriteriontable->add_index('gradecriterion', XMLDB_INDEX_UNIQUE, ['grade', 'criterionkey']);
+            $humancriteriontable->add_index('assignmentgrade', XMLDB_INDEX_NOTUNIQUE, ['assignment', 'grade']);
+            $humancriteriontable->add_index('reviewerid', XMLDB_INDEX_NOTUNIQUE, ['reviewerid']);
+            $dbman->create_table($humancriteriontable);
+        }
+
+        upgrade_plugin_savepoint(true, 2026071303, 'assignfeedback', 'aitutoria');
+    }
+
     return true;
 }
