@@ -1,6 +1,6 @@
 # Estado consolidado
 
-**Versão:** `0.2.0-recovery`  
+**Versão:** `0.2.1-recovery`  
 **Maturidade:** alpha  
 **Política:** Human in Control  
 **Fonte canônica:** este repositório
@@ -21,7 +21,10 @@
 - idiomas inglês e português do Brasil;
 - teste da política de decisão;
 - validador estático;
-- pacote ZIP reproduzível.
+- pacote ZIP reproduzível;
+- instalação automatizada em Moodle 4.4/MariaDB;
+- instalação automatizada em Moodle 4.5/PostgreSQL;
+- PHP lint, PHPUnit, Behat, PHPDoc e savepoints em CI.
 
 ## Não implementado
 
@@ -37,11 +40,11 @@
 
 ## Bloqueios para produção
 
-1. instalação limpa ainda não executada em Moodle real;
-2. atualização sobre banco legado ainda não ensaiada;
-3. backup e restauração ainda não validados em execução real;
-4. testes de banco e Behat ainda pendentes;
-5. código instalado na VM antiga ainda não comparado integralmente;
+1. atualização sobre cópia sanitizada do banco legado real ainda não ensaiada;
+2. backup e restauração precisam de cenário automatizado com verificação de dados;
+3. Privacy API precisa de teste de banco específico;
+4. código instalado na VM antiga ainda não foi comparado integralmente;
+5. teste exploratório de professor e estudante ainda depende de staging;
 6. versão alpha não deve ser habilitada globalmente.
 
 ## Critério para a próxima versão
