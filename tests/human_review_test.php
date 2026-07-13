@@ -108,13 +108,15 @@ final class human_review_test extends \advanced_testcase {
 
         feedback_repository::delete_for_assignment($assignmentid);
 
-        foreach ([
-            'assignfeedback_aitutoria',
-            'assignfeedback_aitutoria_job',
-            'assignfeedback_aitutoria_snp',
-            'assignfeedback_aitutoria_crt',
-            'assignfeedback_aitutoria_aud',
-        ] as $table) {
+        foreach (
+            [
+                'assignfeedback_aitutoria',
+                'assignfeedback_aitutoria_job',
+                'assignfeedback_aitutoria_snp',
+                'assignfeedback_aitutoria_crt',
+                'assignfeedback_aitutoria_aud',
+            ] as $table
+        ) {
             $this->assertSame(0, $DB->count_records($table));
         }
     }
