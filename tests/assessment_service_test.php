@@ -51,7 +51,7 @@ final class assessment_service_test extends \advanced_testcase {
 
         $this->assertTrue($first['created']);
         $this->assertFalse($second['created']);
-        $this->assertSame($first['job']->id, $second['job']->id);
+        $this->assertSame((int) $first['job']->id, (int) $second['job']->id);
         $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_job'));
         $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_snp'));
         $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_aud'));
@@ -122,7 +122,7 @@ final class assessment_service_test extends \advanced_testcase {
             try {
                 assessment_service::execute($jobid, $provider);
                 $this->fail('The failing provider must throw.');
-            } catch (\runtime_exception $exception) {
+            } catch (\RuntimeException $exception) {
                 $this->assertSame('Synthetic provider failure.', $exception->getMessage());
             }
         }
@@ -245,7 +245,7 @@ final class assessment_service_test extends \advanced_testcase {
              * @return assessment_result
              */
             public function assess(assessment_request $request): assessment_result {
-                throw new \runtime_exception('Synthetic provider failure.');
+                throw new \RuntimeException('Synthetic provider failure.');
             }
         };
     }
