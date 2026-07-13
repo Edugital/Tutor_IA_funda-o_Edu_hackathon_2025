@@ -33,10 +33,7 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
      */
     protected function define_grade_subplugin_structure() {
         return [
-            new restore_path_element(
-                $this->get_namefor('grade'),
-                $this->get_pathfor('/feedback_aitutoria')
-            ),
+            new restore_path_element($this->get_namefor('grade'), $this->get_pathfor('/feedback_aitutoria')),
             new restore_path_element(
                 $this->get_namefor('assessment_job'),
                 $this->get_pathfor('/assessment_jobs/assessment_job')
@@ -50,37 +47,28 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
                 $this->get_pathfor('/assessment_jobs/assessment_job/assessment_criteria/assessment_criterion')
             ),
             new restore_path_element(
-                $this->get_namefor('audit_event'),
-                $this->get_pathfor('/audit_events/audit_event')
+                $this->get_namefor('human_criterion'),
+                $this->get_pathfor('/human_criteria/human_criterion')
             ),
+            new restore_path_element($this->get_namefor('audit_event'), $this->get_pathfor('/audit_events/audit_event')),
         ];
     }
 
-    /**
-     * Restore one feedback record.
-     *
-     * @param mixed $data Restored XML data.
-     */
+    /** @param mixed $data Restored XML data. */
     public function process_assignfeedback_aitutoria_grade($data) {
         global $DB;
 
         $data = (object) $data;
         $data->assignment = $this->get_new_parentid('assign');
         $data->grade = $this->get_mappingid('grade', $data->grade);
-
         if (empty($data->grade)) {
             return;
         }
-
         unset($data->id);
         $DB->insert_record('assignfeedback_aitutoria', $data);
     }
 
-    /**
-     * Restore one advisory assessment job.
-     *
-     * @param mixed $data Restored XML data.
-     */
+    /** @param mixed $data Restored XML data. */
     public function process_assignfeedback_aitutoria_assessment_job($data) {
         global $DB;
 
@@ -88,11 +76,9 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         $oldid = (int) $data->id;
         $data->assignment = $this->get_new_parentid('assign');
         $data->grade = $this->get_mappingid('grade', $data->grade);
-
         if (empty($data->grade)) {
             return;
         }
-
         $data->idempotencykey = hash(
             'sha256',
             $data->idempotencykey . ':' . $data->assignment . ':' . $data->grade . ':' . $oldid
@@ -102,17 +88,12 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
             $data->lasterror = 'Restored job requires explicit reprocessing.';
             $data->timeavailable = 0;
         }
-
         unset($data->id);
         $newid = $DB->insert_record('assignfeedback_aitutoria_job', $data);
         $this->set_mapping('assignfeedback_aitutoria_job', $oldid, $newid);
     }
 
-    /**
-     * Restore one immutable assessment snapshot.
-     *
-     * @param mixed $data Restored XML data.
-     */
+    /** @param mixed $data Restored XML data. */
     public function process_assignfeedback_aitutoria_assessment_snapshot($data) {
         global $DB;
 
@@ -121,16 +102,11 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         if (empty($data->jobid)) {
             return;
         }
-
         unset($data->id);
         $DB->insert_record('assignfeedback_aitutoria_snp', $data);
     }
 
-    /**
-     * Restore one criterion-level advisory result.
-     *
-     * @param mixed $data Restored XML data.
-     */
+    /** @param mixed $data Restored XML data. */
     public function process_assignfeedback_aitutoria_assessment_criterion($data) {
         global $DB;
 
@@ -139,16 +115,35 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         if (empty($data->jobid)) {
             return;
         }
-
         unset($data->id);
         $DB->insert_record('assignfeedback_aitutoria_crt', $data);
     }
 
     /**
-     * Restore one audit event with mapped user and job identifiers.
+     * Restore one final human criterion selection.
      *
      * @param mixed $data Restored XML data.
      */
+    public function process_assignfeedback_aitutoria_human_criterion($data) {
+        global $DB;
+
+        $data = (object) $data;
+        $data->assignment = $this->get_new_parentid('assign');
+        $data->grade = $this->get_mappingid('grade', $data->grade);
+        if (empty($data->grade)) {
+            return;
+        }
+        if (!empty($data->jobid)) {
+            $data->jobid = $this->get_mappingid('assignfeedback_aitutoria_job', $data->jobid, null);
+        }
+        if (!empty($data->reviewerid)) {
+            $data->reviewerid = $this->get_mappingid('user', $data->reviewerid, null);
+        }
+        unset($data->id);
+        $DB->insert_record('assignfeedback_aitutoria_hcr', $data);
+    }
+
+    /** @param mixed $data Restored XML data. */
     public function process_assignfeedback_aitutoria_audit_event($data) {
         global $DB;
 
@@ -158,14 +153,12 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         if (empty($data->grade)) {
             return;
         }
-
         if (!empty($data->jobid)) {
             $data->jobid = $this->get_mappingid('assignfeedback_aitutoria_job', $data->jobid, null);
         }
         if (!empty($data->actorid)) {
             $data->actorid = $this->get_mappingid('user', $data->actorid, null);
         }
-
         unset($data->id);
         $DB->insert_record('assignfeedback_aitutoria_aud', $data);
     }
