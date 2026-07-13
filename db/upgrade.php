@@ -116,6 +116,9 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
             $jobtable->add_field('idempotencykey', XMLDB_TYPE_CHAR, '64', null, XMLDB_NOTNULL);
             $jobtable->add_field('provider', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
             $jobtable->add_field('model', XMLDB_TYPE_CHAR, '100', null, null);
+            $jobtable->add_field('promptversion', XMLDB_TYPE_CHAR, '50', null, null);
+            $jobtable->add_field('suggestiontext', XMLDB_TYPE_TEXT, null, null, null);
+            $jobtable->add_field('scoringjson', XMLDB_TYPE_TEXT, null, null, null);
             $jobtable->add_field('attempts', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0');
             $jobtable->add_field('maxattempts', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '3');
             $jobtable->add_field('lasterror', XMLDB_TYPE_TEXT, null, null, null);
