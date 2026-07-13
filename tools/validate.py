@@ -118,7 +118,7 @@ def validate_component_contract() -> None:
 
 def validate_schema_contract() -> None:
     tree = ET.parse(ROOT / "db/install.xml")
-    table = tree.find(".//TABLE[@NAME='assignfeedback_aitut_fb']")
+    table = tree.find(".//TABLE[@NAME='assignfeedback_aitutoria']")
     if table is None:
         fail("canonical feedback table is missing")
 
