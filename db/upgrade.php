@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle. If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * Upgrade steps for AI Tutoring feedback.
@@ -13,8 +21,6 @@
  * @copyright  2026 Edugital
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Upgrade the plugin while preserving known legacy configuration.
@@ -28,9 +34,9 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2026071300) {
-        // Create a new canonical table instead of assuming the shape of any
+        // Create a canonical table instead of assuming the shape of any
         // feedback table that may have existed only on the legacy server.
-        $table = new xmldb_table('assignfeedback_aitut_fb');
+        $table = new xmldb_table('assignfeedback_aitutoria');
 
         if (!$dbman->table_exists($table)) {
             $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
@@ -93,6 +99,18 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
         }
 
         upgrade_plugin_savepoint(true, 2026071300, 'assignfeedback', 'aitutoria');
+    }
+
+    if ($oldversion < 2026071301) {
+        // Rename the short-lived recovery candidate table, when present.
+        $legacyrecoverytable = new xmldb_table('assignfeedback_aitut_fb');
+        $canonicaltable = new xmldb_table('assignfeedback_aitutoria');
+
+        if ($dbman->table_exists($legacyrecoverytable) && !$dbman->table_exists($canonicaltable)) {
+            $dbman->rename_table($legacyrecoverytable, 'assignfeedback_aitutoria');
+        }
+
+        upgrade_plugin_savepoint(true, 2026071301, 'assignfeedback', 'aitutoria');
     }
 
     return true;
