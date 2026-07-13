@@ -74,7 +74,7 @@ final class provider_test extends provider_testcase {
         $this->assertCount(2, $data->criteria);
         $this->assertSame('clarity', $data->criteria[0]['criterionkey']);
         $this->assertNotEmpty($data->audit);
-        $this->assertObjectNotHasProperty('actorid', $data->audit[0]);
+        $this->assertArrayNotHasKey('actorid', $data->audit[0]);
         $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_job'));
     }
 
