@@ -111,7 +111,9 @@ jobs:
 
       - name: PHPUnit
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpunit --fail-on-warning
+        run: |
+          set -o pipefail
+          moodle-plugin-ci phpunit --fail-on-warning 2>&1 | tee reports/phpunit.log
 
       - name: Behat
         id: behat
