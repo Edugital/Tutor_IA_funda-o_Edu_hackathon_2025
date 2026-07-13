@@ -22,6 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use assignfeedback_aitutoria\local\assignment_policy;
 use assignfeedback_aitutoria\local\decision_policy;
 use assignfeedback_aitutoria\local\feedback_repository;
 use assignfeedback_aitutoria\local\repository\audit_repository;
@@ -58,11 +59,52 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             $rubricversion = '';
         }
 
+        $structuredrubric = $this->get_config('structuredrubric');
+        if ($structuredrubric === false) {
+            $structuredrubric = '';
+        }
+
+        $assessmentmode = $this->get_config('assessmentmode');
+        if ($assessmentmode === false) {
+            $assessmentmode = assignment_policy::MODE_DISABLED;
+        }
+
+        $mform->addElement(
+            'select',
+            'assignfeedback_aitutoria_assessmentmode',
+            get_string('assessmentmode', 'assignfeedback_aitutoria'),
+            [
+                assignment_policy::MODE_DISABLED => get_string(
+                    'assessmentmode_disabled',
+                    'assignfeedback_aitutoria'
+                ),
+                assignment_policy::MODE_SHADOW => get_string(
+                    'assessmentmode_shadow',
+                    'assignfeedback_aitutoria'
+                ),
+                assignment_policy::MODE_ASSISTIVE => get_string(
+                    'assessmentmode_assistive',
+                    'assignfeedback_aitutoria'
+                ),
+            ]
+        );
+        $mform->addHelpButton(
+            'assignfeedback_aitutoria_assessmentmode',
+            'assessmentmode',
+            'assignfeedback_aitutoria'
+        );
+        $mform->setDefault('assignfeedback_aitutoria_assessmentmode', $assessmentmode);
+        $mform->hideIf(
+            'assignfeedback_aitutoria_assessmentmode',
+            'assignfeedback_aitutoria_enabled',
+            'notchecked'
+        );
+
         $mform->addElement(
             'textarea',
             'assignfeedback_aitutoria_rubric',
             get_string('rubric', 'assignfeedback_aitutoria'),
-            ['rows' => 12, 'cols' => 80]
+            ['rows' => 8, 'cols' => 80]
         );
         $mform->addHelpButton(
             'assignfeedback_aitutoria_rubric',
@@ -73,6 +115,25 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         $mform->setDefault('assignfeedback_aitutoria_rubric', $rubric);
         $mform->hideIf(
             'assignfeedback_aitutoria_rubric',
+            'assignfeedback_aitutoria_enabled',
+            'notchecked'
+        );
+
+        $mform->addElement(
+            'textarea',
+            'assignfeedback_aitutoria_structuredrubric',
+            get_string('structuredrubric', 'assignfeedback_aitutoria'),
+            ['rows' => 18, 'cols' => 100]
+        );
+        $mform->addHelpButton(
+            'assignfeedback_aitutoria_structuredrubric',
+            'structuredrubric',
+            'assignfeedback_aitutoria'
+        );
+        $mform->setType('assignfeedback_aitutoria_structuredrubric', PARAM_RAW);
+        $mform->setDefault('assignfeedback_aitutoria_structuredrubric', $structuredrubric);
+        $mform->hideIf(
+            'assignfeedback_aitutoria_structuredrubric',
             'assignfeedback_aitutoria_enabled',
             'notchecked'
         );
@@ -121,9 +182,40 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         $rubricversion = isset($data->assignfeedback_aitutoria_rubricversion)
             ? clean_param($data->assignfeedback_aitutoria_rubricversion, PARAM_TEXT)
             : '';
+        $assessmentmode = isset($data->assignfeedback_aitutoria_assessmentmode)
+            ? assignment_policy::normalize_mode((string) $data->assignfeedback_aitutoria_assessmentmode)
+            : assignment_policy::MODE_DISABLED;
+        $structuredrubric = isset($data->assignfeedback_aitutoria_structuredrubric)
+            ? trim((string) $data->assignfeedback_aitutoria_structuredrubric)
+            : '';
+
+        if ($structuredrubric !== '') {
+            try {
+                $structuredrubric = assignment_policy::canonical_rubric_json(
+                    $structuredrubric,
+                    (string) get_config('assignfeedback_aitutoria', 'institutionalframeworkjson')
+                );
+                $parsedrubric = assignment_policy::parse_rubric(
+                    $structuredrubric,
+                    (string) get_config('assignfeedback_aitutoria', 'institutionalframeworkjson')
+                );
+                if ($rubricversion === '') {
+                    $rubricversion = $parsedrubric['version'];
+                }
+            } catch (invalid_parameter_exception $exception) {
+                throw new moodle_exception(
+                    'invalidstructuredrubric',
+                    'assignfeedback_aitutoria',
+                    '',
+                    $exception->getMessage()
+                );
+            }
+        }
 
         $this->set_config('rubric', $rubric);
+        $this->set_config('structuredrubric', $structuredrubric);
         $this->set_config('rubricversion', $rubricversion);
+        $this->set_config('assessmentmode', $assessmentmode);
         $this->set_config('mode', 'human_review');
 
         return true;
@@ -145,6 +237,7 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
 
         $record = feedback_repository::get_by_grade((int) $grade->id);
         $rubric = (string) ($this->get_config('rubric') ?: '');
+        $structuredrubric = $this->get_structured_rubric();
 
         $mform->addElement('header', 'assignfeedback_aitutoria_header', $this->get_name());
 
@@ -154,6 +247,15 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
                 'assignfeedback_aitutoria_rubric_display',
                 get_string('rubric', 'assignfeedback_aitutoria'),
                 format_text($rubric, FORMAT_PLAIN, ['context' => $this->assignment->get_context()])
+            );
+        }
+
+        if ($structuredrubric !== null) {
+            $mform->addElement(
+                'static',
+                'assignfeedback_aitutoria_structuredrubric_display',
+                get_string('structuredrubric', 'assignfeedback_aitutoria'),
+                $this->render_structured_rubric($structuredrubric)
             );
         }
 
@@ -367,5 +469,54 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
      */
     public function get_config_for_external() {
         return (array) $this->get_config();
+    }
+
+    /**
+     * Return the validated structured rubric configured for this assignment.
+     *
+     * @return array|null
+     */
+    private function get_structured_rubric(): ?array {
+        $json = trim((string) ($this->get_config('structuredrubric') ?: ''));
+        if ($json === '') {
+            return null;
+        }
+
+        try {
+            return assignment_policy::parse_rubric(
+                $json,
+                (string) get_config('assignfeedback_aitutoria', 'institutionalframeworkjson')
+            );
+        } catch (invalid_parameter_exception) {
+            return null;
+        }
+    }
+
+    /**
+     * Render a compact teacher-facing summary of a structured rubric.
+     *
+     * @param array $rubric Structured rubric.
+     * @return string Safe HTML.
+     */
+    private function render_structured_rubric(array $rubric): string {
+        $items = [];
+        foreach ($rubric['criteria'] as $criterion) {
+            $levels = array_map(
+                static fn(array $level): string => s($level['label']) . ' (' . $level['score'] . ')',
+                $criterion['levels']
+            );
+            $label = html_writer::tag('strong', s($criterion['title']))
+                . ' — ' . get_string('weight', 'grades') . ': ' . format_float($criterion['weight'], 2);
+            if ($criterion['competencyid'] !== '') {
+                $label .= ' — ' . s($criterion['competencyid']);
+            }
+            $label .= html_writer::div(implode(' · ', $levels), 'text-muted small');
+            $items[] = $label;
+        }
+
+        return html_writer::div(
+            html_writer::tag('strong', s($rubric['version'])) . html_writer::alist($items),
+            'assignfeedback-aitutoria-structured-rubric'
+        );
     }
 }
