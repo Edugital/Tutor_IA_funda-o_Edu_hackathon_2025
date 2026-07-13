@@ -41,7 +41,7 @@ final class human_criterion_repository {
      * @param int|null $jobid Related completed job id.
      * @param int $reviewerid Reviewer user id.
      * @param array $rubric Structured rubric.
-     * @param array<string, string> $selections Criterion id to selected level id.
+     * @param array $selections Criterion id to selected level id.
      * @return array{saved: int, removed: int, matched: int, mismatched: int}
      */
     public static function save_reviews(
