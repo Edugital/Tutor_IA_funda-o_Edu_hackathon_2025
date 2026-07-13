@@ -100,6 +100,22 @@ class backup_assignfeedback_aitutoria_subplugin extends backup_subplugin {
                 'timecreated',
             ]
         );
+        $humancriteria = new backup_nested_element('human_criteria');
+        $humancriterion = new backup_nested_element(
+            'human_criterion',
+            ['id'],
+            [
+                'grade',
+                'jobid',
+                'criterionkey',
+                'selectedlevel',
+                'aiproposedlevel',
+                'matchesai',
+                'reviewerid',
+                'timecreated',
+                'timemodified',
+            ]
+        );
         $auditevents = new backup_nested_element('audit_events');
         $auditevent = new backup_nested_element(
             'audit_event',
@@ -121,29 +137,18 @@ class backup_assignfeedback_aitutoria_subplugin extends backup_subplugin {
         $job->add_child($snapshot);
         $job->add_child($criteria);
         $criteria->add_child($criterion);
+        $wrapper->add_child($humancriteria);
+        $humancriteria->add_child($humancriterion);
         $wrapper->add_child($auditevents);
         $auditevents->add_child($auditevent);
 
-        $feedback->set_source_table(
-            'assignfeedback_aitutoria',
-            ['grade' => backup::VAR_PARENTID]
-        );
-        $job->set_source_table(
-            'assignfeedback_aitutoria_job',
-            ['grade' => backup::VAR_PARENTID]
-        );
-        $snapshot->set_source_table(
-            'assignfeedback_aitutoria_snp',
-            ['jobid' => backup::VAR_PARENTID]
-        );
-        $criterion->set_source_table(
-            'assignfeedback_aitutoria_crt',
-            ['jobid' => backup::VAR_PARENTID]
-        );
-        $auditevent->set_source_table(
-            'assignfeedback_aitutoria_aud',
-            ['grade' => backup::VAR_PARENTID]
-        );
+        $feedback->set_source_table('assignfeedback_aitutoria', ['grade' => backup::VAR_PARENTID]);
+        $job->set_source_table('assignfeedback_aitutoria_job', ['grade' => backup::VAR_PARENTID]);
+        $snapshot->set_source_table('assignfeedback_aitutoria_snp', ['jobid' => backup::VAR_PARENTID]);
+        $criterion->set_source_table('assignfeedback_aitutoria_crt', ['jobid' => backup::VAR_PARENTID]);
+        $humancriterion->set_source_table('assignfeedback_aitutoria_hcr', ['grade' => backup::VAR_PARENTID]);
+        $humancriterion->annotate_ids('user', 'reviewerid');
+        $auditevent->set_source_table('assignfeedback_aitutoria_aud', ['grade' => backup::VAR_PARENTID]);
         $auditevent->annotate_ids('user', 'actorid');
 
         return $subplugin;
