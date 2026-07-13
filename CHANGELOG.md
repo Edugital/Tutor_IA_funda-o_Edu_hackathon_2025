@@ -8,13 +8,33 @@ O formato segue os princípios de Keep a Changelog e versionamento semântico, a
 
 ### Planejado
 
-- testes de banco e Behat em Moodle real;
+- testes adicionais de banco e backup;
 - rubricas estruturadas e versionadas;
 - processamento assíncrono e idempotente;
 - abstração de provedores;
 - avaliação por critério e evidência;
 - painel de revisão humana e calibração;
 - tutor fundamentado no curso.
+
+## [0.2.1-recovery] - 2026-07-13
+
+### Corrigido
+
+- conformidade com o Moodle Code Checker;
+- prefixo canônico da tabela `assignfeedback_aitutoria`;
+- validação oficial de metadados do plugin;
+- migração automática da tabela curta usada pela primeira baseline candidata;
+- rastreabilidade dos relatórios de CI.
+
+### Validado
+
+- instalação limpa no Moodle 4.4 com MariaDB;
+- instalação limpa no Moodle 4.5 com PostgreSQL;
+- PHP lint;
+- PHPUnit;
+- Behat;
+- savepoints de atualização;
+- pacote ZIP instalável com raiz `aitutoria/`.
 
 ## [0.2.0-recovery] - 2026-07-13
 
@@ -46,4 +66,4 @@ O formato segue os princípios de Keep a Changelog e versionamento semântico, a
 - sem processamento de anexos;
 - sem rubrica estruturada;
 - sem painel administrativo avançado;
-- instalação e atualização ainda precisam de validação em Moodle real.
+- atualização sobre o banco legado real ainda depende de teste externo.
