@@ -54,7 +54,11 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         ];
     }
 
-    /** @param mixed $data Restored XML data. */
+    /**
+     * Restore one published feedback record.
+     *
+     * @param mixed $data Restored XML data.
+     */
     public function process_assignfeedback_aitutoria_grade($data) {
         global $DB;
 
@@ -68,7 +72,11 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         $DB->insert_record('assignfeedback_aitutoria', $data);
     }
 
-    /** @param mixed $data Restored XML data. */
+    /**
+     * Restore one advisory assessment job.
+     *
+     * @param mixed $data Restored XML data.
+     */
     public function process_assignfeedback_aitutoria_assessment_job($data) {
         global $DB;
 
@@ -93,7 +101,11 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         $this->set_mapping('assignfeedback_aitutoria_job', $oldid, $newid);
     }
 
-    /** @param mixed $data Restored XML data. */
+    /**
+     * Restore one immutable assessment snapshot.
+     *
+     * @param mixed $data Restored XML data.
+     */
     public function process_assignfeedback_aitutoria_assessment_snapshot($data) {
         global $DB;
 
@@ -106,7 +118,11 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         $DB->insert_record('assignfeedback_aitutoria_snp', $data);
     }
 
-    /** @param mixed $data Restored XML data. */
+    /**
+     * Restore one criterion-level advisory result.
+     *
+     * @param mixed $data Restored XML data.
+     */
     public function process_assignfeedback_aitutoria_assessment_criterion($data) {
         global $DB;
 
@@ -143,7 +159,11 @@ class restore_assignfeedback_aitutoria_subplugin extends restore_subplugin {
         $DB->insert_record('assignfeedback_aitutoria_hcr', $data);
     }
 
-    /** @param mixed $data Restored XML data. */
+    /**
+     * Restore one redacted audit event.
+     *
+     * @param mixed $data Restored XML data.
+     */
     public function process_assignfeedback_aitutoria_audit_event($data) {
         global $DB;
 
