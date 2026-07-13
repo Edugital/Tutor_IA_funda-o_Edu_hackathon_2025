@@ -85,32 +85,56 @@ final class assessment_result {
         $this->metadata = $metadata;
     }
 
-    /** @return string Provider identifier. */
+    /**
+     * Return the provider identifier.
+     *
+     * @return string Provider identifier.
+     */
     public function get_provider(): string {
         return $this->provider;
     }
 
-    /** @return string Model identifier. */
+    /**
+     * Return the model identifier.
+     *
+     * @return string Model identifier.
+     */
     public function get_model(): string {
         return $this->model;
     }
 
-    /** @return string Prompt/template version. */
+    /**
+     * Return the prompt or template version.
+     *
+     * @return string Prompt/template version.
+     */
     public function get_promptversion(): string {
         return $this->promptversion;
     }
 
-    /** @return string Suggested feedback. */
+    /**
+     * Return the unpublished feedback suggestion.
+     *
+     * @return string Suggested feedback.
+     */
     public function get_suggestion(): string {
         return $this->suggestion;
     }
 
-    /** @return criterion_result[] Criterion results. */
+    /**
+     * Return the criterion-level advisory results.
+     *
+     * @return criterion_result[] Criterion results.
+     */
     public function get_criteria(): array {
         return $this->criteria;
     }
 
-    /** @return array Provider metadata. */
+    /**
+     * Return provider metadata safe for audit.
+     *
+     * @return array Provider metadata.
+     */
     public function get_metadata(): array {
         return $this->metadata;
     }
