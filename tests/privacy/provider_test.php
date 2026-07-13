@@ -142,13 +142,15 @@ final class provider_test extends provider_testcase {
 
         provider::delete_feedback_for_context(new assign_plugin_request_data($assign->get_context(), $assign));
 
-        foreach ([
-            'assignfeedback_aitutoria',
-            'assignfeedback_aitutoria_job',
-            'assignfeedback_aitutoria_snp',
-            'assignfeedback_aitutoria_crt',
-            'assignfeedback_aitutoria_aud',
-        ] as $table) {
+        foreach (
+            [
+                'assignfeedback_aitutoria',
+                'assignfeedback_aitutoria_job',
+                'assignfeedback_aitutoria_snp',
+                'assignfeedback_aitutoria_crt',
+                'assignfeedback_aitutoria_aud',
+            ] as $table
+        ) {
             $this->assertSame(0, $DB->count_records($table));
         }
     }
