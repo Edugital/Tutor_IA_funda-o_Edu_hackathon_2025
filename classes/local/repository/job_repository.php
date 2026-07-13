@@ -115,10 +115,10 @@ final class job_repository {
         try {
             $record->id = $DB->insert_record(self::TABLE, $record);
             return ['job' => $record, 'created' => true];
-        } catch (\dml_write_exception) {
+        } catch (\dml_write_exception $exception) {
             $existing = self::get_by_key($key);
             if (!$existing) {
-                throw new \dml_write_exception('Could not create or recover the idempotent assessment job.');
+                throw $exception;
             }
             return ['job' => $existing, 'created' => false];
         }
