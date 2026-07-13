@@ -26,6 +26,7 @@ use assignfeedback_aitutoria\local\assignment_policy;
 use assignfeedback_aitutoria\local\decision_policy;
 use assignfeedback_aitutoria\local\feedback_repository;
 use assignfeedback_aitutoria\local\repository\audit_repository;
+use assignfeedback_aitutoria\local\repository\human_criterion_repository;
 
 /**
  * Human-in-control assignment feedback plugin.
@@ -53,17 +54,14 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         if ($rubric === false) {
             $rubric = '';
         }
-
         $rubricversion = $this->get_config('rubricversion');
         if ($rubricversion === false) {
             $rubricversion = '';
         }
-
         $structuredrubric = $this->get_config('structuredrubric');
         if ($structuredrubric === false) {
             $structuredrubric = '';
         }
-
         $assessmentmode = $this->get_config('assessmentmode');
         if ($assessmentmode === false) {
             $assessmentmode = assignment_policy::MODE_DISABLED;
@@ -74,18 +72,9 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             'assignfeedback_aitutoria_assessmentmode',
             get_string('assessmentmode', 'assignfeedback_aitutoria'),
             [
-                assignment_policy::MODE_DISABLED => get_string(
-                    'assessmentmode_disabled',
-                    'assignfeedback_aitutoria'
-                ),
-                assignment_policy::MODE_SHADOW => get_string(
-                    'assessmentmode_shadow',
-                    'assignfeedback_aitutoria'
-                ),
-                assignment_policy::MODE_ASSISTIVE => get_string(
-                    'assessmentmode_assistive',
-                    'assignfeedback_aitutoria'
-                ),
+                assignment_policy::MODE_DISABLED => get_string('assessmentmode_disabled', 'assignfeedback_aitutoria'),
+                assignment_policy::MODE_SHADOW => get_string('assessmentmode_shadow', 'assignfeedback_aitutoria'),
+                assignment_policy::MODE_ASSISTIVE => get_string('assessmentmode_assistive', 'assignfeedback_aitutoria'),
             ]
         );
         $mform->addHelpButton(
@@ -106,18 +95,10 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             get_string('rubric', 'assignfeedback_aitutoria'),
             ['rows' => 8, 'cols' => 80]
         );
-        $mform->addHelpButton(
-            'assignfeedback_aitutoria_rubric',
-            'rubric',
-            'assignfeedback_aitutoria'
-        );
+        $mform->addHelpButton('assignfeedback_aitutoria_rubric', 'rubric', 'assignfeedback_aitutoria');
         $mform->setType('assignfeedback_aitutoria_rubric', PARAM_RAW);
         $mform->setDefault('assignfeedback_aitutoria_rubric', $rubric);
-        $mform->hideIf(
-            'assignfeedback_aitutoria_rubric',
-            'assignfeedback_aitutoria_enabled',
-            'notchecked'
-        );
+        $mform->hideIf('assignfeedback_aitutoria_rubric', 'assignfeedback_aitutoria_enabled', 'notchecked');
 
         $mform->addElement(
             'textarea',
@@ -238,9 +219,9 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         $record = feedback_repository::get_by_grade((int) $grade->id);
         $rubric = (string) ($this->get_config('rubric') ?: '');
         $structuredrubric = $this->get_structured_rubric();
+        $humanreviews = human_criterion_repository::get_for_grade((int) $grade->id);
 
         $mform->addElement('header', 'assignfeedback_aitutoria_header', $this->get_name());
-
         if ($rubric !== '') {
             $mform->addElement(
                 'static',
@@ -249,7 +230,6 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
                 format_text($rubric, FORMAT_PLAIN, ['context' => $this->assignment->get_context()])
             );
         }
-
         if ($structuredrubric !== null) {
             $mform->addElement(
                 'static',
@@ -257,6 +237,24 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
                 get_string('structuredrubric', 'assignfeedback_aitutoria'),
                 $this->render_structured_rubric($structuredrubric)
             );
+            $mform->addElement(
+                'static',
+                'assignfeedback_aitutoria_criterionreview_notice',
+                get_string('criterionreview', 'assignfeedback_aitutoria'),
+                get_string('criterionreview_help', 'assignfeedback_aitutoria')
+            );
+            foreach ($structuredrubric['criteria'] as $criterion) {
+                $fieldname = self::criterion_field_name($criterion['id']);
+                $options = ['' => get_string('criterion_notassessed', 'assignfeedback_aitutoria')];
+                foreach ($criterion['levels'] as $level) {
+                    $options[$level['id']] = $level['label'];
+                }
+                $mform->addElement('select', $fieldname, $criterion['title'], $options);
+                $default = isset($humanreviews[$criterion['id']])
+                    ? (string) $humanreviews[$criterion['id']]->selectedlevel
+                    : '';
+                $mform->setDefault($fieldname, $default);
+            }
         }
 
         if ($record && $record->aistatus === 'ready' && trim((string) $record->aisuggestion) !== '') {
@@ -290,7 +288,6 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         }
 
         $data->assignfeedback_aitutoria_feedback = $record ? (string) $record->feedbacktext : '';
-
         $mform->addElement(
             'textarea',
             'assignfeedback_aitutoria_feedback',
@@ -307,7 +304,6 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             'feedback',
             'assignfeedback_aitutoria'
         );
-
         $mform->addElement(
             'static',
             'assignfeedback_aitutoria_review_notice',
@@ -344,7 +340,6 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             $acceptsuggestion,
             $reviewaction
         );
-
         audit_repository::record(
             $assignmentid,
             (int) $grade->id,
@@ -359,6 +354,37 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
                 'rubricversion' => $record->rubricversion,
             ]
         );
+
+        $structuredrubric = $this->get_structured_rubric();
+        if ($structuredrubric !== null) {
+            $selections = [];
+            foreach ($structuredrubric['criteria'] as $criterion) {
+                $fieldname = self::criterion_field_name($criterion['id']);
+                $selections[$criterion['id']] = isset($data->{$fieldname})
+                    ? clean_param($data->{$fieldname}, PARAM_ALPHANUMEXT)
+                    : '';
+            }
+            $latestjob = human_criterion_repository::get_latest_completed_job(
+                $assignmentid,
+                (int) $grade->id
+            );
+            $summary = human_criterion_repository::save_reviews(
+                $assignmentid,
+                (int) $grade->id,
+                $latestjob ? (int) $latestjob->id : null,
+                (int) $USER->id,
+                $structuredrubric,
+                $selections
+            );
+            audit_repository::record(
+                $assignmentid,
+                (int) $grade->id,
+                'human_criteria_saved',
+                $latestjob ? (int) $latestjob->id : null,
+                (int) $USER->id,
+                $summary + ['rubricversion' => $structuredrubric['version']]
+            );
+        }
 
         return true;
     }
@@ -379,10 +405,31 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         $reviewaction = isset($data->assignfeedback_aitutoria_reviewaction)
             ? clean_param($data->assignfeedback_aitutoria_reviewaction, PARAM_ALPHA)
             : decision_policy::ACTION_MANUAL;
+        if ($stored !== $submitted
+                || !empty($data->assignfeedback_aitutoria_acceptsuggestion)
+                || $reviewaction !== decision_policy::ACTION_MANUAL) {
+            return true;
+        }
 
-        return $stored !== $submitted
-            || !empty($data->assignfeedback_aitutoria_acceptsuggestion)
-            || $reviewaction !== decision_policy::ACTION_MANUAL;
+        $structuredrubric = $this->get_structured_rubric();
+        if ($structuredrubric === null) {
+            return false;
+        }
+        $humanreviews = human_criterion_repository::get_for_grade((int) $grade->id);
+        foreach ($structuredrubric['criteria'] as $criterion) {
+            $fieldname = self::criterion_field_name($criterion['id']);
+            $submittedlevel = isset($data->{$fieldname})
+                ? clean_param($data->{$fieldname}, PARAM_ALPHANUMEXT)
+                : '';
+            $storedlevel = isset($humanreviews[$criterion['id']])
+                ? (string) $humanreviews[$criterion['id']]->selectedlevel
+                : '';
+            if ($submittedlevel !== $storedlevel) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -396,7 +443,6 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         $full = $this->view($grade);
         $short = shorten_text($full, 140);
         $showviewlink = $short !== $full;
-
         return $short;
     }
 
@@ -411,7 +457,6 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         if (!$record || trim((string) $record->feedbacktext) === '') {
             return '';
         }
-
         return format_text(
             $record->feedbacktext,
             (int) $record->feedbackformat,
@@ -419,69 +464,39 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         );
     }
 
-    /**
-     * Feedback format for gradebook synchronization.
-     *
-     * @param stdClass $grade Grade record.
-     * @return int
-     */
+    /** @param stdClass $grade Grade record. @return int */
     public function format_for_gradebook(stdClass $grade) {
         return FORMAT_PLAIN;
     }
 
-    /**
-     * Feedback text for gradebook synchronization.
-     *
-     * @param stdClass $grade Grade record.
-     * @return string
-     */
+    /** @param stdClass $grade Grade record. @return string */
     public function text_for_gradebook(stdClass $grade) {
         $record = feedback_repository::get_by_grade((int) $grade->id);
-
         return $record ? (string) $record->feedbacktext : '';
     }
 
-    /**
-     * Delete all plugin data for the assignment.
-     *
-     * @return bool
-     */
+    /** @return bool */
     public function delete_instance() {
         feedback_repository::delete_for_assignment((int) $this->assignment->get_instance()->id);
-
         return true;
     }
 
-    /**
-     * Whether a grade has no published feedback.
-     *
-     * @param stdClass $grade Grade record.
-     * @return bool
-     */
+    /** @param stdClass $grade Grade record. @return bool */
     public function is_empty(stdClass $grade) {
         return $this->view($grade) === '';
     }
 
-    /**
-     * Configuration exposed through assignment external functions.
-     *
-     * @return array
-     */
+    /** @return array */
     public function get_config_for_external() {
         return (array) $this->get_config();
     }
 
-    /**
-     * Return the validated structured rubric configured for this assignment.
-     *
-     * @return array|null
-     */
+    /** @return array|null */
     private function get_structured_rubric(): ?array {
         $json = trim((string) ($this->get_config('structuredrubric') ?: ''));
         if ($json === '') {
             return null;
         }
-
         try {
             return assignment_policy::parse_rubric(
                 $json,
@@ -513,10 +528,19 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             $label .= html_writer::div(implode(' · ', $levels), 'text-muted small');
             $items[] = $label;
         }
-
         return html_writer::div(
             html_writer::tag('strong', s($rubric['version'])) . html_writer::alist($items),
             'assignfeedback-aitutoria-structured-rubric'
         );
+    }
+
+    /**
+     * Build a stable Moodle form field name for a criterion id.
+     *
+     * @param string $criterionkey Criterion identifier.
+     * @return string Field name.
+     */
+    private static function criterion_field_name(string $criterionkey): string {
+        return 'assignfeedback_aitutoria_criterion_' . substr(hash('sha256', $criterionkey), 0, 16);
     }
 }
