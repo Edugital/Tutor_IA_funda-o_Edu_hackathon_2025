@@ -86,32 +86,56 @@ final class criterion_result {
         $this->requireshuman = $requireshuman;
     }
 
-    /** @return string Criterion identifier. */
+    /**
+     * Return the criterion identifier.
+     *
+     * @return string Criterion identifier.
+     */
     public function get_criterionkey(): string {
         return $this->criterionkey;
     }
 
-    /** @return string Proposed rubric level identifier. */
+    /**
+     * Return the proposed rubric level identifier.
+     *
+     * @return string Proposed rubric level identifier.
+     */
     public function get_proposedlevel(): string {
         return $this->proposedlevel;
     }
 
-    /** @return string Rationale. */
+    /**
+     * Return the human-readable rationale.
+     *
+     * @return string Rationale.
+     */
     public function get_rationale(): string {
         return $this->rationale;
     }
 
-    /** @return array Evidence. */
+    /**
+     * Return the supporting evidence excerpts and locations.
+     *
+     * @return array Evidence.
+     */
     public function get_evidence(): array {
         return $this->evidence;
     }
 
-    /** @return string Uncertainty. */
+    /**
+     * Return the uncertainty classification.
+     *
+     * @return string Uncertainty.
+     */
     public function get_uncertainty(): string {
         return $this->uncertainty;
     }
 
-    /** @return bool Whether human review is mandatory. */
+    /**
+     * Indicate whether human review is mandatory.
+     *
+     * @return bool Whether human review is mandatory.
+     */
     public function requires_human(): bool {
         return $this->requireshuman;
     }
