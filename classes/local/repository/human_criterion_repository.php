@@ -128,7 +128,7 @@ final class human_criterion_repository {
             $matchesai = $aiproposedlevel === null ? null : (int) ($aiproposedlevel === $selectedlevel);
             if ($matchesai === 1) {
                 $summary['matched']++;
-            } elseif ($matchesai === 0) {
+            } else if ($matchesai === 0) {
                 $summary['mismatched']++;
             }
 
