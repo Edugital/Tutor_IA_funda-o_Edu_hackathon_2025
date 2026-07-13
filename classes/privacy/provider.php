@@ -111,17 +111,36 @@ class provider implements
         return $collection;
     }
 
-    /** @param int $userid User id. @param contextlist $contextlist Context list. */
+    /**
+     * Add additional contexts for a user within assignment feedback.
+     *
+     * Assignment grade records already provide the required contexts.
+     *
+     * @param int $userid User id.
+     * @param contextlist $contextlist Context list.
+     */
     public static function get_context_for_userid_within_feedback(int $userid, contextlist $contextlist) {
         // Contexts are provided by mod_assign grades.
     }
 
-    /** @param useridlist $useridlist User id list. */
+    /**
+     * Add additional student user ids for assignment feedback.
+     *
+     * Assignment grade records already provide the required student ids.
+     *
+     * @param useridlist $useridlist User id list.
+     */
     public static function get_student_user_ids(useridlist $useridlist) {
         // Student ids are provided by mod_assign grades.
     }
 
-    /** @param \core_privacy\local\request\userlist $userlist User list. */
+    /**
+     * Add additional user ids from one assignment context.
+     *
+     * No additional user lookup is required beyond mod_assign grades.
+     *
+     * @param \core_privacy\local\request\userlist $userlist User list.
+     */
     public static function get_userids_from_context(\core_privacy\local\request\userlist $userlist) {
         // No additional user lookup is required.
     }
@@ -136,9 +155,16 @@ class provider implements
 
         $gradeid = (int) $exportdata->get_pluginobject()->id;
         $assignmentid = (int) $exportdata->get_assignid();
-        $basepath = array_merge($exportdata->get_subcontext(), [get_string('privacy:path', 'assignfeedback_aitutoria')]);
+        $basepath = array_merge(
+            $exportdata->get_subcontext(),
+            [get_string('privacy:path', 'assignfeedback_aitutoria')]
+        );
         $record = feedback_repository::get_by_grade($gradeid);
-        $humancriteria = $DB->get_records('assignfeedback_aitutoria_hcr', ['grade' => $gradeid], 'criterionkey ASC');
+        $humancriteria = $DB->get_records(
+            'assignfeedback_aitutoria_hcr',
+            ['grade' => $gradeid],
+            'criterionkey ASC'
+        );
 
         if ($record || !empty($humancriteria)) {
             $data = (object) [
@@ -219,22 +245,40 @@ class provider implements
                     $audit
                 )),
             ];
-            $path = array_merge($basepath, [get_string('privacy:assessmentjob', 'assignfeedback_aitutoria', $job->id)]);
+            $path = array_merge(
+                $basepath,
+                [get_string('privacy:assessmentjob', 'assignfeedback_aitutoria', $job->id)]
+            );
             writer::with_context($exportdata->get_context())->export_data($path, $jobdata);
         }
     }
 
-    /** @param assign_plugin_request_data $requestdata Deletion request. */
+    /**
+     * Delete all plugin feedback data in one assignment context.
+     *
+     * @param assign_plugin_request_data $requestdata Deletion request.
+     */
     public static function delete_feedback_for_context(assign_plugin_request_data $requestdata) {
         self::delete_engine_data((int) $requestdata->get_assignid());
     }
 
-    /** @param assign_plugin_request_data $requestdata Deletion request. */
+    /**
+     * Delete plugin feedback data for one assignment grade.
+     *
+     * @param assign_plugin_request_data $requestdata Deletion request.
+     */
     public static function delete_feedback_for_grade(assign_plugin_request_data $requestdata) {
-        self::delete_engine_data((int) $requestdata->get_assignid(), [(int) $requestdata->get_pluginobject()->id]);
+        self::delete_engine_data(
+            (int) $requestdata->get_assignid(),
+            [(int) $requestdata->get_pluginobject()->id]
+        );
     }
 
-    /** @param assign_plugin_request_data $deletedata Deletion request. */
+    /**
+     * Delete plugin feedback data for multiple assignment grades.
+     *
+     * @param assign_plugin_request_data $deletedata Deletion request.
+     */
     public static function delete_feedback_for_grades(assign_plugin_request_data $deletedata) {
         $gradeids = array_map('intval', $deletedata->get_gradeids());
         if (!empty($gradeids)) {
