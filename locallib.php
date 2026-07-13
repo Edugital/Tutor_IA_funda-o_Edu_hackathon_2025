@@ -22,14 +22,15 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use assignfeedback_aitutoria\local\decision_policy;
 use assignfeedback_aitutoria\local\feedback_repository;
+use assignfeedback_aitutoria\local\repository\audit_repository;
 
 /**
  * Human-in-control assignment feedback plugin.
  *
- * The recovery baseline publishes only feedback explicitly saved by a human
- * grader. AI suggestions, when enabled and produced by a future provider
- * layer, remain unpublished until accepted or edited by the grader.
+ * AI suggestions remain unpublished until a human accepts, edits, rejects,
+ * or escalates them. This plugin never writes a numeric Moodle grade.
  */
 class assign_feedback_aitutoria extends assign_feedback_plugin {
     /**
@@ -168,15 +169,22 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
                 )
             );
             $mform->addElement(
-                'advcheckbox',
-                'assignfeedback_aitutoria_acceptsuggestion',
-                get_string('acceptsuggestion', 'assignfeedback_aitutoria')
+                'select',
+                'assignfeedback_aitutoria_reviewaction',
+                get_string('reviewaction', 'assignfeedback_aitutoria'),
+                [
+                    decision_policy::ACTION_MANUAL => get_string('reviewaction_manual', 'assignfeedback_aitutoria'),
+                    decision_policy::ACTION_ACCEPT => get_string('reviewaction_accept', 'assignfeedback_aitutoria'),
+                    decision_policy::ACTION_REJECT => get_string('reviewaction_reject', 'assignfeedback_aitutoria'),
+                    decision_policy::ACTION_ESCALATE => get_string('reviewaction_escalate', 'assignfeedback_aitutoria'),
+                ]
             );
             $mform->addHelpButton(
-                'assignfeedback_aitutoria_acceptsuggestion',
-                'acceptsuggestion',
+                'assignfeedback_aitutoria_reviewaction',
+                'reviewaction',
                 'assignfeedback_aitutoria'
             );
+            $mform->setDefault('assignfeedback_aitutoria_reviewaction', decision_policy::ACTION_MANUAL);
         }
 
         $data->assignfeedback_aitutoria_feedback = $record ? (string) $record->feedbacktext : '';
@@ -216,16 +224,38 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
      * @return bool
      */
     public function save(stdClass $grade, stdClass $data) {
+        global $USER;
+
         $feedback = isset($data->assignfeedback_aitutoria_feedback)
             ? (string) $data->assignfeedback_aitutoria_feedback
             : '';
         $acceptsuggestion = !empty($data->assignfeedback_aitutoria_acceptsuggestion);
+        $reviewaction = isset($data->assignfeedback_aitutoria_reviewaction)
+            ? clean_param($data->assignfeedback_aitutoria_reviewaction, PARAM_ALPHA)
+            : '';
+        $assignmentid = (int) $this->assignment->get_instance()->id;
 
-        feedback_repository::save_human_feedback(
-            (int) $this->assignment->get_instance()->id,
+        $record = feedback_repository::save_human_feedback(
+            $assignmentid,
             (int) $grade->id,
             $feedback,
-            $acceptsuggestion
+            $acceptsuggestion,
+            $reviewaction
+        );
+
+        audit_repository::record(
+            $assignmentid,
+            (int) $grade->id,
+            'human_review_saved',
+            null,
+            (int) $USER->id,
+            [
+                'decision' => $record->decision,
+                'aistatus' => $record->aistatus,
+                'model' => $record->model,
+                'promptversion' => $record->promptversion,
+                'rubricversion' => $record->rubricversion,
+            ]
         );
 
         return true;
@@ -244,8 +274,13 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         $submitted = isset($data->assignfeedback_aitutoria_feedback)
             ? trim((string) $data->assignfeedback_aitutoria_feedback)
             : '';
+        $reviewaction = isset($data->assignfeedback_aitutoria_reviewaction)
+            ? clean_param($data->assignfeedback_aitutoria_reviewaction, PARAM_ALPHA)
+            : decision_policy::ACTION_MANUAL;
 
-        return $stored !== $submitted || !empty($data->assignfeedback_aitutoria_acceptsuggestion);
+        return $stored !== $submitted
+            || !empty($data->assignfeedback_aitutoria_acceptsuggestion)
+            || $reviewaction !== decision_policy::ACTION_MANUAL;
     }
 
     /**
