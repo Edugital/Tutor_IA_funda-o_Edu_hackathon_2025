@@ -46,17 +46,29 @@ final class fixture_provider implements provider_interface {
         $this->level = $level;
     }
 
-    /** @return string Provider identifier. */
+    /**
+     * Return the stable provider identifier.
+     *
+     * @return string Provider identifier.
+     */
     public function get_name(): string {
         return 'fixture';
     }
 
-    /** @return string Model identifier. */
+    /**
+     * Return the deterministic fixture model identifier.
+     *
+     * @return string Model identifier.
+     */
     public function get_model(): string {
         return 'deterministic-fixture-v1';
     }
 
-    /** @return string Prompt version. */
+    /**
+     * Return the deterministic fixture prompt version.
+     *
+     * @return string Prompt version.
+     */
     public function get_promptversion(): string {
         return 'fixture-prompt-v1';
     }
