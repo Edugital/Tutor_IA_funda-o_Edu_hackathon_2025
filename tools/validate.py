@@ -18,9 +18,13 @@ REQUIRED = {
     "db/install.xml",
     "db/upgrade.php",
     "db/tasks.php",
+    "db/access.php",
+    "report.php",
     "classes/local/decision_policy.php",
     "classes/local/feedback_repository.php",
     "classes/local/assessment_service.php",
+    "classes/local/repository/human_criterion_repository.php",
+    "classes/local/reporting/health_report.php",
     "classes/privacy/provider.php",
     "classes/task/process_assessment.php",
     "classes/task/cleanup_assessment_data.php",
@@ -88,7 +92,6 @@ def validate_php() -> None:
     php_files = sorted(ROOT.rglob("*.php"))
     if not php_files:
         fail("no PHP files found")
-
     for path in php_files:
         result = subprocess.run(
             ["php", "-l", str(path)],
@@ -144,6 +147,7 @@ def validate_schema_contract() -> None:
         "assignfeedback_aitutoria_job",
         "assignfeedback_aitutoria_snp",
         "assignfeedback_aitutoria_crt",
+        "assignfeedback_aitutoria_hcr",
         "assignfeedback_aitutoria_aud",
     }
     missingtables = sorted(requiredtables - set(tables))
@@ -152,19 +156,8 @@ def validate_schema_contract() -> None:
 
     feedbackfields = {node.attrib["NAME"] for node in tables["assignfeedback_aitutoria"].findall("./FIELDS/FIELD")}
     requiredfeedbackfields = {
-        "id",
-        "assignment",
-        "grade",
-        "feedbacktext",
-        "feedbackformat",
-        "aisuggestion",
-        "aistatus",
-        "decision",
-        "model",
-        "promptversion",
-        "rubricversion",
-        "timecreated",
-        "timemodified",
+        "id", "assignment", "grade", "feedbacktext", "feedbackformat", "aisuggestion",
+        "aistatus", "decision", "model", "promptversion", "rubricversion", "timecreated", "timemodified",
     }
     missingfields = sorted(requiredfeedbackfields - feedbackfields)
     if missingfields:
@@ -174,6 +167,14 @@ def validate_schema_contract() -> None:
     for required in ("idempotencykey", "status", "provider", "suggestiontext", "scoringjson", "attempts"):
         if required not in jobfields:
             fail(f"job schema is missing field: {required}")
+
+    humanfields = {node.attrib["NAME"] for node in tables["assignfeedback_aitutoria_hcr"].findall("./FIELDS/FIELD")}
+    for required in (
+        "assignment", "grade", "jobid", "criterionkey", "selectedlevel",
+        "aiproposedlevel", "matchesai", "reviewerid", "timecreated", "timemodified",
+    ):
+        if required not in humanfields:
+            fail(f"human criterion schema is missing field: {required}")
 
 
 def validate_forbidden_patterns() -> None:
