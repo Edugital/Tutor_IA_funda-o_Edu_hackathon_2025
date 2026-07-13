@@ -67,27 +67,47 @@ final class assessment_request {
         $this->policy = $policy;
     }
 
-    /** @return int Assignment id. */
+    /**
+     * Return the assignment id.
+     *
+     * @return int Assignment id.
+     */
     public function get_assignmentid(): int {
         return $this->assignmentid;
     }
 
-    /** @return int Grade id. */
+    /**
+     * Return the grade id.
+     *
+     * @return int Grade id.
+     */
     public function get_gradeid(): int {
         return $this->gradeid;
     }
 
-    /** @return string Submission text. */
+    /**
+     * Return the immutable submission text snapshot.
+     *
+     * @return string Submission text.
+     */
     public function get_submissiontext(): string {
         return $this->submissiontext;
     }
 
-    /** @return array Structured rubric. */
+    /**
+     * Return the structured rubric snapshot.
+     *
+     * @return array Structured rubric.
+     */
     public function get_rubric(): array {
         return $this->rubric;
     }
 
-    /** @return array Effective policy. */
+    /**
+     * Return the effective policy snapshot.
+     *
+     * @return array Effective policy.
+     */
     public function get_policy(): array {
         return $this->policy;
     }
