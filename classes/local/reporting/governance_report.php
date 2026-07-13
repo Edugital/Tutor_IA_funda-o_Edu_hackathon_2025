@@ -63,6 +63,7 @@ final class governance_report {
         $providercounts = [];
         $percentages = [];
         $jobids = [];
+        $corruptscoringrecords = 0;
 
         foreach ($jobs as $job) {
             $jobids[] = (int) $job->id;
@@ -75,7 +76,7 @@ final class governance_report {
                         $percentages[] = (float) $scoring['percentage'];
                     }
                 } catch (\JsonException) {
-                    // Corrupt historical metrics are ignored but do not expose content.
+                    $corruptscoringrecords++;
                 }
             }
         }
@@ -156,6 +157,7 @@ final class governance_report {
                 'averageadvisorypercentage' => empty($percentages)
                     ? null
                     : round(array_sum($percentages) / count($percentages), 2),
+                'corruptscoringrecords' => $corruptscoringrecords,
             ],
             'criteria' => [
                 'total' => count($criteria),
