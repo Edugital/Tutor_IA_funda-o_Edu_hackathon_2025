@@ -39,7 +39,7 @@ final class process_assessment_task_test extends \advanced_testcase {
 
         $first = assessment_service::queue($request, new fixture_provider(), null, true);
         $second = assessment_service::queue($request, new fixture_provider(), null, true);
-        $tasks = \core\task\manager::get_adhoc_tasks(process_assessment::class);
+        $tasks = array_values(\core\task\manager::get_adhoc_tasks(process_assessment::class));
 
         $this->assertTrue($first['created']);
         $this->assertFalse($second['created']);
@@ -60,7 +60,7 @@ final class process_assessment_task_test extends \advanced_testcase {
             null,
             true
         );
-        $tasks = \core\task\manager::get_adhoc_tasks(process_assessment::class);
+        $tasks = array_values(\core\task\manager::get_adhoc_tasks(process_assessment::class));
         $this->assertCount(1, $tasks);
 
         $DB->delete_records('assignfeedback_aitutoria_aud', ['jobid' => $queued['job']->id]);
