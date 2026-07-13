@@ -31,15 +31,24 @@ final class process_assessment extends \core\task\adhoc_task {
      * Execute the queued job.
      */
     public function execute(): void {
+        global $DB;
+
         $customdata = $this->get_custom_data();
         $jobid = (int) ($customdata->jobid ?? 0);
         if ($jobid < 1) {
             throw new \coding_exception('Assessment task requires a job id.');
         }
+        if (!$DB->record_exists('assignfeedback_aitutoria_job', ['id' => $jobid])) {
+            return;
+        }
 
         try {
             assessment_service::execute($jobid);
         } catch (\Throwable $exception) {
+            if (!$DB->record_exists('assignfeedback_aitutoria_job', ['id' => $jobid])) {
+                return;
+            }
+
             $job = job_repository::get($jobid);
             if ($job->status === job_repository::STATUS_QUEUED) {
                 $delay = max(1, (int) $job->timeavailable - time());
