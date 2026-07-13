@@ -160,7 +160,13 @@ final class human_criterion_repository {
     public static function get_for_grade(int $gradeid): array {
         global $DB;
 
-        return $DB->get_records(self::TABLE, ['grade' => $gradeid], 'criterionkey ASC', '*', 0, 0);
+        $records = $DB->get_records(self::TABLE, ['grade' => $gradeid], 'criterionkey ASC');
+        $indexed = [];
+        foreach ($records as $record) {
+            $indexed[$record->criterionkey] = $record;
+        }
+
+        return $indexed;
     }
 
     /**
