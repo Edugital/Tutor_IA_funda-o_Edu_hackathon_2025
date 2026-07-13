@@ -172,6 +172,7 @@ final class feedback_repository {
     public static function delete_for_assignment(int $assignmentid): void {
         global $DB;
 
+        $DB->delete_records('assignfeedback_aitutoria_hcr', ['assignment' => $assignmentid]);
         $jobids = $DB->get_fieldset_select(
             'assignfeedback_aitutoria_job',
             'id',
