@@ -18,6 +18,7 @@ namespace assignfeedback_aitutoria\local\repository;
 
 use assignfeedback_aitutoria\local\dto\assessment_request;
 use assignfeedback_aitutoria\local\dto\assessment_result;
+use assignfeedback_aitutoria\local\error_sanitizer;
 use assignfeedback_aitutoria\local\idempotency;
 use assignfeedback_aitutoria\local\provider\provider_interface;
 
@@ -176,7 +177,7 @@ final class job_repository {
      * Record a failure and determine whether another attempt is allowed.
      *
      * @param int $jobid Job id.
-     * @param string $error Sanitized error message.
+     * @param string $error Raw error message.
      * @param int $retrydelay Delay before retry in seconds.
      * @return bool True when the job may be retried.
      */
@@ -186,7 +187,7 @@ final class job_repository {
         $job = self::get($jobid);
         $retry = (int) $job->attempts < (int) $job->maxattempts;
         $job->status = $retry ? self::STATUS_QUEUED : self::STATUS_FAILED;
-        $job->lasterror = \core_text::substr(trim($error), 0, 2000);
+        $job->lasterror = error_sanitizer::sanitize($error);
         $job->timeavailable = $retry ? time() + max(0, $retrydelay) : 0;
         $job->timemodified = time();
         $DB->update_record(self::TABLE, $job);
