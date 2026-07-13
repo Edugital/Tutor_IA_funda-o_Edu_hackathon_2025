@@ -37,3 +37,11 @@ $settings->add(new admin_setting_configcheckbox(
     new lang_string('allowaisuggestions_help', 'assignfeedback_aitutoria'),
     0
 ));
+
+$settings->add(new admin_setting_configtext(
+    'assignfeedback_aitutoria/retentiondays',
+    new lang_string('retentiondays', 'assignfeedback_aitutoria'),
+    new lang_string('retentiondays_help', 'assignfeedback_aitutoria'),
+    0,
+    PARAM_INT
+));
