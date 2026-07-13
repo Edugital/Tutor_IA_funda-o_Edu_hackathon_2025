@@ -73,6 +73,7 @@ jobs:
           echo "$(cd ci/vendor/bin; pwd)" >> "$GITHUB_PATH"
           sudo locale-gen en_AU.UTF-8
           echo "NVM_DIR=$HOME/.nvm" >> "$GITHUB_ENV"
+          mkdir -p reports
 
       - name: Install Moodle and plugin
         run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
@@ -86,7 +87,9 @@ jobs:
 
       - name: Moodle Code Checker
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpcs --max-warnings 0
+        run: |
+          set -o pipefail
+          moodle-plugin-ci phpcs --max-warnings 0 2>&1 | tee reports/phpcs.log
 
       - name: Moodle PHPDoc Checker
         if: ${{ !cancelled() }}
@@ -94,7 +97,9 @@ jobs:
 
       - name: Validate plugin metadata
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci validate
+        run: |
+          set -o pipefail
+          moodle-plugin-ci validate 2>&1 | tee reports/validate.log
 
       - name: Check upgrade savepoints
         if: ${{ !cancelled() }}
@@ -108,6 +113,15 @@ jobs:
         id: behat
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci behat --profile chrome --scss-deprecations
+
+      - name: Upload validation reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: moodle-ci-reports-${{ matrix.php }}-${{ matrix.database }}
+          path: reports/*.log
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload Behat faildump
         if: ${{ failure() && steps.behat.outcome == 'failure' }}
