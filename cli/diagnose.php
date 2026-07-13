@@ -28,23 +28,14 @@ require_once(__DIR__ . '/../../../../../config.php');
 require_once($CFG->libdir . '/clilib.php');
 
 [$options, $unrecognized] = cli_get_params(
-    [
-        'help' => false,
-        'json' => false,
-    ],
-    [
-        'h' => 'help',
-        'j' => 'json',
-    ]
+    ['help' => false, 'json' => false],
+    ['h' => 'help', 'j' => 'json']
 );
-
 if (!empty($unrecognized)) {
-    $unrecognized = implode("\n  ", $unrecognized);
-    cli_error("Unknown options:\n  {$unrecognized}");
+    cli_error("Unknown options:\n  " . implode("\n  ", $unrecognized));
 }
-
 if ($options['help']) {
-    $help = <<<HELP
+    echo <<<HELP
 Diagnose the installed AI Tutoring assignment feedback plugin.
 
 Options:
@@ -54,7 +45,7 @@ Options:
 Example:
 php mod/assign/feedback/aitutoria/cli/diagnose.php --json
 HELP;
-    echo $help . PHP_EOL;
+    echo PHP_EOL;
     exit(0);
 }
 
@@ -67,11 +58,11 @@ $requiredtables = [
     'assignfeedback_aitutoria_job',
     'assignfeedback_aitutoria_snp',
     'assignfeedback_aitutoria_crt',
+    'assignfeedback_aitutoria_hcr',
     'assignfeedback_aitutoria_aud',
 ];
 $tablechecks = [];
 $critical = [];
-
 foreach ($requiredtables as $tablename) {
     $exists = $dbman->table_exists(new xmldb_table($tablename));
     $tablechecks[$tablename] = $exists;
@@ -79,7 +70,6 @@ foreach ($requiredtables as $tablename) {
         $critical[] = "Missing database table: {$tablename}";
     }
 }
-
 if (!$plugininfo) {
     $critical[] = 'Plugin is not registered by Moodle.';
 }
@@ -94,9 +84,13 @@ if ($tablechecks['assignfeedback_aitutoria_job']) {
         $jobcounts[$status] = $DB->count_records('assignfeedback_aitutoria_job', ['status' => $status]);
     }
 }
+$calibrationcount = $tablechecks['assignfeedback_aitutoria_hcr']
+    ? $DB->count_records('assignfeedback_aitutoria_hcr')
+    : 0;
+$health = assignfeedback_aitutoria\local\reporting\health_report::build();
 
 $report = [
-    'status' => empty($critical) ? 'ok' : 'critical',
+    'status' => empty($critical) && $health['status'] !== 'critical' ? $health['status'] : 'critical',
     'component' => $component,
     'pluginversiondisk' => $plugininfo ? $plugininfo->versiondisk : null,
     'pluginversiondb' => get_config($component, 'version'),
@@ -110,10 +104,14 @@ $report = [
         'defaultenabled' => (bool) get_config($component, 'default'),
         'allowaisuggestions' => (bool) get_config($component, 'allowaisuggestions'),
         'retentiondays' => (int) get_config($component, 'retentiondays'),
+        'processingtimeoutminutes' => (int) get_config($component, 'processingtimeoutminutes'),
     ],
+    'framework' => $health['framework'],
     'productionproviders' => $providers,
     'scheduledretentiontask' => $scheduledtask !== false,
     'jobcounts' => $jobcounts,
+    'calibrationrecords' => $calibrationcount,
+    'issues' => $health['issues'],
     'critical' => $critical,
 ];
 
@@ -128,6 +126,8 @@ if ($options['json']) {
     mtrace('Database family: ' . $report['dbfamily']);
     mtrace('AI suggestions enabled: ' . ($report['settings']['allowaisuggestions'] ? 'yes' : 'no'));
     mtrace('Retention days: ' . $report['settings']['retentiondays']);
+    mtrace('Calibration records: ' . $report['calibrationrecords']);
+    mtrace('Institutional framework: ' . ($report['framework']['configured'] ? $report['framework']['version'] : 'not configured'));
     mtrace('Production providers: ' . (empty($providers) ? 'none' : implode(', ', array_keys($providers))));
     foreach ($tablechecks as $tablename => $exists) {
         mtrace("Table {$tablename}: " . ($exists ? 'ok' : 'missing'));
@@ -135,9 +135,12 @@ if ($options['json']) {
     foreach ($jobcounts as $status => $count) {
         mtrace("Jobs {$status}: {$count}");
     }
+    foreach ($report['issues'] as $issue) {
+        mtrace(strtoupper($issue['severity']) . ': ' . $issue['message']);
+    }
     foreach ($critical as $message) {
         mtrace("CRITICAL: {$message}");
     }
 }
 
-exit(empty($critical) ? 0 : 1);
+exit($report['status'] === 'critical' ? 1 : 0);
