@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/assign/feedback/aitutoria/db" VERSION="2026071300" COMMENT="XMLDB file for AI Tutoring assignment feedback"
+<XMLDB PATH="mod/assign/feedback/aitutoria/db" VERSION="2026071301" COMMENT="XMLDB file for AI Tutoring assignment feedback"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd">
   <TABLES>
-    <TABLE NAME="assignfeedback_aitut_fb" COMMENT="Human-reviewed feedback and optional AI suggestions">
+    <TABLE NAME="assignfeedback_aitutoria" COMMENT="Human-reviewed feedback and optional AI suggestions">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
