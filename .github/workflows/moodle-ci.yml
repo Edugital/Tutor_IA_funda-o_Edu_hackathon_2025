@@ -97,7 +97,9 @@ jobs:
 
       - name: Moodle PHPDoc Checker
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpdoc --max-warnings 0
+        run: |
+          set -o pipefail
+          moodle-plugin-ci phpdoc --max-warnings 0 2>&1 | tee reports/phpdoc.log
 
       - name: Validate plugin metadata
         if: ${{ !cancelled() }}
