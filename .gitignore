@@ -1,0 +1,8 @@
+dist/
+vendor/
+node_modules/
+.venv/
+.phpunit.result.cache
+.DS_Store
+*.log
+*.zip
