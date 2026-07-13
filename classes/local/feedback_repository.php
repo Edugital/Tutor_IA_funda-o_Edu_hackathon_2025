@@ -45,14 +45,16 @@ final class feedback_repository {
      * @param int $assignmentid Assignment instance id.
      * @param int $gradeid Grade id.
      * @param string $humantext Human-authored feedback.
-     * @param bool $acceptsuggestion Explicit acceptance of the stored AI suggestion.
+     * @param bool $acceptsuggestion Legacy explicit acceptance flag.
+     * @param string $reviewaction Complete Human in Control action.
      * @return \stdClass Saved record.
      */
     public static function save_human_feedback(
         int $assignmentid,
         int $gradeid,
         string $humantext,
-        bool $acceptsuggestion
+        bool $acceptsuggestion,
+        string $reviewaction = ''
     ): \stdClass {
         global $DB;
 
@@ -60,7 +62,13 @@ final class feedback_repository {
 
         $record = self::get_by_grade($gradeid);
         $suggestion = $record ? (string) ($record->aisuggestion ?? '') : '';
-        $resolved = decision_policy::resolve($humantext, $suggestion, $acceptsuggestion);
+        $reviewaction = trim($reviewaction);
+        if ($reviewaction === '') {
+            $reviewaction = $acceptsuggestion
+                ? decision_policy::ACTION_ACCEPT
+                : decision_policy::ACTION_MANUAL;
+        }
+        $resolved = decision_policy::resolve_review($humantext, $suggestion, $reviewaction);
         $now = time();
 
         if (!$record) {
@@ -68,7 +76,6 @@ final class feedback_repository {
                 'assignment' => $assignmentid,
                 'grade' => $gradeid,
                 'aisuggestion' => null,
-                'aistatus' => 'not_requested',
                 'model' => null,
                 'promptversion' => null,
                 'rubricversion' => null,
@@ -78,6 +85,7 @@ final class feedback_repository {
 
         $record->feedbacktext = $resolved['text'];
         $record->feedbackformat = FORMAT_PLAIN;
+        $record->aistatus = $resolved['aistatus'];
         $record->decision = $resolved['decision'];
         $record->timemodified = $now;
 
@@ -157,13 +165,29 @@ final class feedback_repository {
     }
 
     /**
-     * Delete all plugin data for an assignment.
+     * Delete all plugin data for an assignment in foreign-key order.
      *
      * @param int $assignmentid Assignment instance id.
      */
     public static function delete_for_assignment(int $assignmentid): void {
         global $DB;
 
+        $DB->delete_records('assignfeedback_aitutoria_hcr', ['assignment' => $assignmentid]);
+        $jobids = $DB->get_fieldset_select(
+            'assignfeedback_aitutoria_job',
+            'id',
+            'assignment = :assignment',
+            ['assignment' => $assignmentid]
+        );
+        if (!empty($jobids)) {
+            [$jobsql, $jobparams] = $DB->get_in_or_equal($jobids, SQL_PARAMS_NAMED, 'job');
+            $DB->delete_records_select('assignfeedback_aitutoria_aud', "jobid {$jobsql}", $jobparams);
+            $DB->delete_records_select('assignfeedback_aitutoria_crt', "jobid {$jobsql}", $jobparams);
+            $DB->delete_records_select('assignfeedback_aitutoria_snp', "jobid {$jobsql}", $jobparams);
+        }
+
+        $DB->delete_records('assignfeedback_aitutoria_aud', ['assignment' => $assignmentid]);
+        $DB->delete_records('assignfeedback_aitutoria_job', ['assignment' => $assignmentid]);
         $DB->delete_records(self::TABLE, ['assignment' => $assignmentid]);
     }
 

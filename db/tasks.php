@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Version information for the AI Tutoring assignment feedback plugin.
+ * Scheduled tasks for AI Tutoring feedback.
  *
  * @package    assignfeedback_aitutoria
  * @copyright  2026 Edugital
@@ -24,8 +24,14 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026071303;
-$plugin->requires = 2024042200;
-$plugin->component = 'assignfeedback_aitutoria';
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.3.0-alpha.2';
+$tasks = [
+    [
+        'classname' => '\\assignfeedback_aitutoria\\task\\cleanup_assessment_data',
+        'blocking' => 0,
+        'minute' => 'R',
+        'hour' => '3',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
+];

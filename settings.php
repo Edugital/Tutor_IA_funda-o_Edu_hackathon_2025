@@ -24,6 +24,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$settings->add(new admin_setting_heading(
+    'assignfeedback_aitutoria/generalheading',
+    new lang_string('settings:general', 'assignfeedback_aitutoria'),
+    ''
+));
+
 $settings->add(new admin_setting_configcheckbox(
     'assignfeedback_aitutoria/default',
     new lang_string('default', 'assignfeedback_aitutoria'),
@@ -36,4 +42,47 @@ $settings->add(new admin_setting_configcheckbox(
     new lang_string('allowaisuggestions', 'assignfeedback_aitutoria'),
     new lang_string('allowaisuggestions_help', 'assignfeedback_aitutoria'),
     0
+));
+
+$settings->add(new admin_setting_configtext(
+    'assignfeedback_aitutoria/retentiondays',
+    new lang_string('retentiondays', 'assignfeedback_aitutoria'),
+    new lang_string('retentiondays_help', 'assignfeedback_aitutoria'),
+    0,
+    PARAM_INT
+));
+
+$settings->add(new admin_setting_configtext(
+    'assignfeedback_aitutoria/processingtimeoutminutes',
+    new lang_string('processingtimeoutminutes', 'assignfeedback_aitutoria'),
+    new lang_string('processingtimeoutminutes_help', 'assignfeedback_aitutoria'),
+    15,
+    PARAM_INT
+));
+
+$settings->add(new admin_setting_heading(
+    'assignfeedback_aitutoria/frameworkheading',
+    new lang_string('settings:framework', 'assignfeedback_aitutoria'),
+    new lang_string('settings:framework_help', 'assignfeedback_aitutoria')
+));
+
+$settings->add(new \assignfeedback_aitutoria\admin\setting_framework(
+    'assignfeedback_aitutoria/institutionalframeworkjson',
+    new lang_string('institutionalframework', 'assignfeedback_aitutoria'),
+    new lang_string('institutionalframework_help', 'assignfeedback_aitutoria'),
+    '',
+    PARAM_RAW,
+    '100',
+    '24'
+));
+
+$reporturl = new moodle_url('/mod/assign/feedback/aitutoria/report.php');
+$settings->add(new admin_setting_description(
+    'assignfeedback_aitutoria/governancereportlink',
+    new lang_string('governancereport', 'assignfeedback_aitutoria'),
+    html_writer::link(
+        $reporturl,
+        get_string('opengovernancereport', 'assignfeedback_aitutoria'),
+        ['class' => 'btn btn-secondary']
+    )
 ));

@@ -5,6 +5,7 @@ declare(strict_types=1);
 define('MOODLE_INTERNAL', true);
 
 class coding_exception extends Exception {}
+class invalid_parameter_exception extends Exception {}
 
 require_once __DIR__ . '/../classes/local/decision_policy.php';
 
@@ -14,17 +15,47 @@ $tests = [
     [
         'name' => 'manual without suggestion',
         'actual' => decision_policy::resolve('Human feedback', '', false),
-        'expected' => ['text' => 'Human feedback', 'decision' => 'manual'],
+        'expected' => [
+            'text' => 'Human feedback',
+            'decision' => 'manual',
+            'aistatus' => 'not_requested',
+        ],
     ],
     [
         'name' => 'explicit acceptance',
         'actual' => decision_policy::resolve('Draft', 'Reviewed suggestion', true),
-        'expected' => ['text' => 'Reviewed suggestion', 'decision' => 'accepted_ai'],
+        'expected' => [
+            'text' => 'Reviewed suggestion',
+            'decision' => 'accepted_ai',
+            'aistatus' => 'accepted',
+        ],
     ],
     [
         'name' => 'human override',
         'actual' => decision_policy::resolve('Edited by teacher', 'AI suggestion', false),
-        'expected' => ['text' => 'Edited by teacher', 'decision' => 'overridden_ai'],
+        'expected' => [
+            'text' => 'Edited by teacher',
+            'decision' => 'overridden_ai',
+            'aistatus' => 'overridden',
+        ],
+    ],
+    [
+        'name' => 'explicit rejection',
+        'actual' => decision_policy::resolve_review('Teacher feedback', 'AI suggestion', 'reject'),
+        'expected' => [
+            'text' => 'Teacher feedback',
+            'decision' => 'rejected_ai',
+            'aistatus' => 'rejected',
+        ],
+    ],
+    [
+        'name' => 'explicit escalation',
+        'actual' => decision_policy::resolve_review('', 'AI suggestion', 'escalate'),
+        'expected' => [
+            'text' => '',
+            'decision' => 'escalated',
+            'aistatus' => 'escalated',
+        ],
     ],
 ];
 
@@ -41,7 +72,15 @@ try {
     decision_policy::resolve('Text', '', true);
     fwrite(STDERR, "FAIL: accepting an absent suggestion did not throw\n");
     exit(1);
-} catch (coding_exception $exception) {
+} catch (coding_exception) {
+    // Expected.
+}
+
+try {
+    decision_policy::resolve_review('Text', 'Suggestion', 'unknown');
+    fwrite(STDERR, "FAIL: unknown review action did not throw\n");
+    exit(1);
+} catch (invalid_parameter_exception) {
     // Expected.
 }
 
