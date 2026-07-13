@@ -8,11 +8,11 @@
 //
 // Moodle is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * English strings for AI Tutoring feedback.
@@ -36,8 +36,8 @@ $string['feedback_help'] = 'Write or edit the feedback that will be published to
 $string['humancontrol'] = 'Human control';
 $string['humancontrol_help'] = 'AI output is advisory only. A human grader must review and explicitly save the feedback. This plugin never changes a numeric grade automatically.';
 $string['pluginname'] = 'AI tutoring feedback';
-$string['privacy:metadata:aisuggestion'] = 'An unpublished AI-generated suggestion awaiting human review.';
 $string['privacy:metadata:aistatus'] = 'The processing status of an AI suggestion.';
+$string['privacy:metadata:aisuggestion'] = 'An unpublished AI-generated suggestion awaiting human review.';
 $string['privacy:metadata:assignment'] = 'The assignment associated with the feedback.';
 $string['privacy:metadata:decision'] = 'Whether the human grader wrote, accepted, or overrode an AI suggestion.';
 $string['privacy:metadata:feedbacktext'] = 'The feedback published after human review.';
