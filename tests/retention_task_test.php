@@ -50,6 +50,7 @@ final class retention_task_test extends \advanced_testcase {
 
         $oldtime = time() - (31 * DAYSECS);
         $DB->set_field('assignfeedback_aitutoria_job', 'timemodified', $oldtime, ['id' => $queued['job']->id]);
+        $this->expectOutputString("Deleted 1 expired AI tutoring assessment job(s).\n");
         (new cleanup_assessment_data())->execute();
 
         $this->assertSame(0, $DB->count_records('assignfeedback_aitutoria_job'));
@@ -84,6 +85,7 @@ final class retention_task_test extends \advanced_testcase {
             ['id' => $queued['job']->id]
         );
 
+        $this->expectOutputString("AI tutoring advisory-data retention is disabled.\n");
         (new cleanup_assessment_data())->execute();
 
         $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_job'));
@@ -113,6 +115,7 @@ final class retention_task_test extends \advanced_testcase {
             ['id' => $queued['job']->id]
         );
 
+        $this->expectOutputString("Deleted 0 expired AI tutoring assessment job(s).\n");
         (new cleanup_assessment_data())->execute();
 
         $this->assertSame(1, $DB->count_records('assignfeedback_aitutoria_job'));
