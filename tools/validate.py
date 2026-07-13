@@ -17,9 +17,13 @@ REQUIRED = {
     "locallib.php",
     "db/install.xml",
     "db/upgrade.php",
+    "db/tasks.php",
     "classes/local/decision_policy.php",
     "classes/local/feedback_repository.php",
+    "classes/local/assessment_service.php",
     "classes/privacy/provider.php",
+    "classes/task/process_assessment.php",
+    "classes/task/cleanup_assessment_data.php",
     "backup/moodle2/backup_assignfeedback_aitutoria_subplugin.class.php",
     "backup/moodle2/restore_assignfeedback_aitutoria_subplugin.class.php",
     "lang/en/assignfeedback_aitutoria.php",
@@ -38,7 +42,17 @@ FORBIDDEN_PATTERNS = {
     r"autograde\s*[=:>]\s*(?:1|true)": "automatic grading enabled",
 }
 
+GRADE_WRITE_PATTERNS = {
+    r"(?:insert_record|update_record|delete_records|delete_records_select)\s*\(\s*['\"]assign_grades['\"]":
+        "direct assign_grades record mutation",
+    r"(?:set_field|set_field_select)\s*\(\s*['\"]assign_grades['\"]":
+        "direct assign_grades field mutation",
+    r"(?:UPDATE|INSERT\s+INTO|DELETE\s+FROM)\s+\{assign_grades\}":
+        "direct assign_grades SQL mutation",
+}
+
 IGNORED_DIRS = {".git", "vendor", "node_modules", "dist", ".venv"}
+NON_PRODUCTION_DIRS = {"tests", "tools"}
 
 
 def fail(message: str) -> None:
@@ -54,6 +68,14 @@ def iter_text_files():
             yield path, path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
+
+
+def iter_production_php_files():
+    for path in sorted(ROOT.rglob("*.php")):
+        relative = path.relative_to(ROOT)
+        if any(part in IGNORED_DIRS | NON_PRODUCTION_DIRS for part in relative.parts):
+            continue
+        yield path, path.read_text(encoding="utf-8")
 
 
 def validate_required_files() -> None:
@@ -91,6 +113,7 @@ def validate_component_contract() -> None:
     locallib = (ROOT / "locallib.php").read_text(encoding="utf-8")
     repository = (ROOT / "classes/local/feedback_repository.php").read_text(encoding="utf-8")
     upgrade = (ROOT / "db/upgrade.php").read_text(encoding="utf-8")
+    providerregistry = (ROOT / "classes/local/provider/provider_registry.php").read_text(encoding="utf-8")
 
     if "$plugin->component = 'assignfeedback_aitutoria';" not in version:
         fail("version.php does not declare assignfeedback_aitutoria")
@@ -102,28 +125,33 @@ def validate_component_contract() -> None:
         fail("private AI suggestion storage boundary is missing")
     if "legacy_autograde_was_enabled" not in upgrade:
         fail("legacy autograde evidence is not preserved safely")
+    if "return [];" not in providerregistry:
+        fail("production provider registry must remain closed by default")
 
-    prohibited_grade_writes = (
-        "insert_record('assign_grades'",
-        'insert_record("assign_grades"',
-        "update_record('assign_grades'",
-        'update_record("assign_grades"',
-        "delete_records('assign_grades'",
-        'delete_records("assign_grades"',
-    )
-    for marker in prohibited_grade_writes:
-        if marker in "\n".join((locallib, repository, upgrade)):
-            fail("direct numeric-grade mutation detected")
+
+def validate_no_grade_writes() -> None:
+    for path, text in iter_production_php_files():
+        for pattern, description in GRADE_WRITE_PATTERNS.items():
+            if re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE):
+                fail(f"{description} detected in {path.relative_to(ROOT)}")
 
 
 def validate_schema_contract() -> None:
     tree = ET.parse(ROOT / "db/install.xml")
-    table = tree.find(".//TABLE[@NAME='assignfeedback_aitutoria']")
-    if table is None:
-        fail("canonical feedback table is missing")
+    tables = {node.attrib["NAME"]: node for node in tree.findall(".//TABLE")}
+    requiredtables = {
+        "assignfeedback_aitutoria",
+        "assignfeedback_aitutoria_job",
+        "assignfeedback_aitutoria_snp",
+        "assignfeedback_aitutoria_crt",
+        "assignfeedback_aitutoria_aud",
+    }
+    missingtables = sorted(requiredtables - set(tables))
+    if missingtables:
+        fail("schema is missing tables: " + ", ".join(missingtables))
 
-    fields = {node.attrib["NAME"] for node in table.findall("./FIELDS/FIELD")}
-    required_fields = {
+    feedbackfields = {node.attrib["NAME"] for node in tables["assignfeedback_aitutoria"].findall("./FIELDS/FIELD")}
+    requiredfeedbackfields = {
         "id",
         "assignment",
         "grade",
@@ -138,9 +166,14 @@ def validate_schema_contract() -> None:
         "timecreated",
         "timemodified",
     }
-    missing = sorted(required_fields - fields)
-    if missing:
-        fail("schema is missing fields: " + ", ".join(missing))
+    missingfields = sorted(requiredfeedbackfields - feedbackfields)
+    if missingfields:
+        fail("feedback schema is missing fields: " + ", ".join(missingfields))
+
+    jobfields = {node.attrib["NAME"] for node in tables["assignfeedback_aitutoria_job"].findall("./FIELDS/FIELD")}
+    for required in ("idempotencykey", "status", "provider", "suggestiontext", "scoringjson", "attempts"):
+        if required not in jobfields:
+            fail(f"job schema is missing field: {required}")
 
 
 def validate_forbidden_patterns() -> None:
@@ -167,6 +200,7 @@ def main() -> None:
     validate_php()
     validate_xml()
     validate_component_contract()
+    validate_no_grade_writes()
     validate_schema_contract()
     validate_forbidden_patterns()
     run_behavioral_tests()
