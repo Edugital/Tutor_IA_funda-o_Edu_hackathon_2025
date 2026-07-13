@@ -70,11 +70,12 @@ assignfeedback_aitut_cfg
 
 O processo:
 
-- cria a tabela canônica `assignfeedback_aitut_fb` se necessário;
+- cria a tabela canônica `assignfeedback_aitutoria` se necessário;
+- renomeia a tabela candidata `assignfeedback_aitut_fb`, quando encontrada;
 - migra configurações conhecidas para `assign_plugin_config`;
 - força o modo `human_review`;
 - registra que o autograde legado esteve ativo sem reativá-lo;
-- não apaga a tabela legada.
+- não apaga a tabela legada documentada.
 
 Antes de atualizar produção:
 
