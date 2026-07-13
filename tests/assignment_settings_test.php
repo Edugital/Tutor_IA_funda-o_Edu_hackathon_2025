@@ -30,7 +30,7 @@ require_once($CFG->dirroot . '/mod/assign/tests/generator.php');
  * @package    assignfeedback_aitutoria
  * @copyright  2026 Edugital
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \assign_feedback_aitutoria
+ * @covers     \assign_feedback_aitutoria::save_settings
  */
 final class assignment_settings_test extends \advanced_testcase {
     use mod_assign_test_generator;
