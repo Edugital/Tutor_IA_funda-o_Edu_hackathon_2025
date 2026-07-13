@@ -37,6 +37,9 @@
         <FIELD NAME="idempotencykey" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="provider" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="model" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="promptversion" TYPE="char" LENGTH="50" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="suggestiontext" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="scoringjson" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="attempts" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="maxattempts" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="3" SEQUENCE="false"/>
         <FIELD NAME="lasterror" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
