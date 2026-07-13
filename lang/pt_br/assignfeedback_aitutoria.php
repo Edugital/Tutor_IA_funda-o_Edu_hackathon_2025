@@ -8,11 +8,11 @@
 //
 // Moodle is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Strings em português do Brasil para o feedback de Tutoria IA.
@@ -36,8 +36,8 @@ $string['feedback_help'] = 'Escreva ou revise o feedback que será publicado par
 $string['humancontrol'] = 'Controle humano';
 $string['humancontrol_help'] = 'A IA é apenas consultiva. Uma pessoa responsável deve revisar e salvar explicitamente o feedback. O plugin nunca altera a nota numérica automaticamente.';
 $string['pluginname'] = 'Feedback com Tutoria IA';
-$string['privacy:metadata:aisuggestion'] = 'Uma sugestão gerada por IA, ainda não publicada e aguardando revisão humana.';
 $string['privacy:metadata:aistatus'] = 'O estado de processamento de uma sugestão de IA.';
+$string['privacy:metadata:aisuggestion'] = 'Uma sugestão gerada por IA, ainda não publicada e aguardando revisão humana.';
 $string['privacy:metadata:assignment'] = 'A tarefa associada ao feedback.';
 $string['privacy:metadata:decision'] = 'Indica se a pessoa avaliadora escreveu, aceitou ou substituiu uma sugestão de IA.';
 $string['privacy:metadata:feedbacktext'] = 'O feedback publicado após revisão humana.';
