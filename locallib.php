@@ -72,9 +72,18 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             'assignfeedback_aitutoria_assessmentmode',
             get_string('assessmentmode', 'assignfeedback_aitutoria'),
             [
-                assignment_policy::MODE_DISABLED => get_string('assessmentmode_disabled', 'assignfeedback_aitutoria'),
-                assignment_policy::MODE_SHADOW => get_string('assessmentmode_shadow', 'assignfeedback_aitutoria'),
-                assignment_policy::MODE_ASSISTIVE => get_string('assessmentmode_assistive', 'assignfeedback_aitutoria'),
+                assignment_policy::MODE_DISABLED => get_string(
+                    'assessmentmode_disabled',
+                    'assignfeedback_aitutoria'
+                ),
+                assignment_policy::MODE_SHADOW => get_string(
+                    'assessmentmode_shadow',
+                    'assignfeedback_aitutoria'
+                ),
+                assignment_policy::MODE_ASSISTIVE => get_string(
+                    'assessmentmode_assistive',
+                    'assignfeedback_aitutoria'
+                ),
             ]
         );
         $mform->addHelpButton(
@@ -95,10 +104,18 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             get_string('rubric', 'assignfeedback_aitutoria'),
             ['rows' => 8, 'cols' => 80]
         );
-        $mform->addHelpButton('assignfeedback_aitutoria_rubric', 'rubric', 'assignfeedback_aitutoria');
+        $mform->addHelpButton(
+            'assignfeedback_aitutoria_rubric',
+            'rubric',
+            'assignfeedback_aitutoria'
+        );
         $mform->setType('assignfeedback_aitutoria_rubric', PARAM_RAW);
         $mform->setDefault('assignfeedback_aitutoria_rubric', $rubric);
-        $mform->hideIf('assignfeedback_aitutoria_rubric', 'assignfeedback_aitutoria_enabled', 'notchecked');
+        $mform->hideIf(
+            'assignfeedback_aitutoria_rubric',
+            'assignfeedback_aitutoria_enabled',
+            'notchecked'
+        );
 
         $mform->addElement(
             'textarea',
@@ -405,9 +422,11 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         $reviewaction = isset($data->assignfeedback_aitutoria_reviewaction)
             ? clean_param($data->assignfeedback_aitutoria_reviewaction, PARAM_ALPHA)
             : decision_policy::ACTION_MANUAL;
-        if ($stored !== $submitted
-                || !empty($data->assignfeedback_aitutoria_acceptsuggestion)
-                || $reviewaction !== decision_policy::ACTION_MANUAL) {
+        if (
+            $stored !== $submitted
+            || !empty($data->assignfeedback_aitutoria_acceptsuggestion)
+            || $reviewaction !== decision_policy::ACTION_MANUAL
+        ) {
             return true;
         }
 
@@ -464,34 +483,61 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         );
     }
 
-    /** @param stdClass $grade Grade record. @return int */
+    /**
+     * Return the feedback format used by the gradebook.
+     *
+     * @param stdClass $grade Grade record.
+     * @return int Feedback format.
+     */
     public function format_for_gradebook(stdClass $grade) {
         return FORMAT_PLAIN;
     }
 
-    /** @param stdClass $grade Grade record. @return string */
+    /**
+     * Return the published feedback text used by the gradebook.
+     *
+     * @param stdClass $grade Grade record.
+     * @return string Published feedback.
+     */
     public function text_for_gradebook(stdClass $grade) {
         $record = feedback_repository::get_by_grade((int) $grade->id);
         return $record ? (string) $record->feedbacktext : '';
     }
 
-    /** @return bool */
+    /**
+     * Delete all plugin data for this assignment.
+     *
+     * @return bool
+     */
     public function delete_instance() {
         feedback_repository::delete_for_assignment((int) $this->assignment->get_instance()->id);
         return true;
     }
 
-    /** @param stdClass $grade Grade record. @return bool */
+    /**
+     * Determine whether a grade has no published feedback.
+     *
+     * @param stdClass $grade Grade record.
+     * @return bool
+     */
     public function is_empty(stdClass $grade) {
         return $this->view($grade) === '';
     }
 
-    /** @return array */
+    /**
+     * Return plugin configuration for assignment external functions.
+     *
+     * @return array
+     */
     public function get_config_for_external() {
         return (array) $this->get_config();
     }
 
-    /** @return array|null */
+    /**
+     * Return the validated structured rubric for this assignment.
+     *
+     * @return array|null Structured rubric or null when unavailable.
+     */
     private function get_structured_rubric(): ?array {
         $json = trim((string) ($this->get_config('structuredrubric') ?: ''));
         if ($json === '') {
