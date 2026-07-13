@@ -76,7 +76,7 @@ jobs:
           mkdir -p reports
 
       - name: Install Moodle and plugin
-        run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
+        run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1 --not-paths=tools
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
