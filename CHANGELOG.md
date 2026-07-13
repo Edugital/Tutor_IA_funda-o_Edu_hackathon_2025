@@ -8,13 +8,31 @@ O formato segue os princípios de Keep a Changelog e versionamento semântico, a
 
 ### Planejado
 
-- testes adicionais de banco e backup;
-- rubricas estruturadas e versionadas;
-- processamento assíncrono e idempotente;
-- abstração de provedores;
-- avaliação por critério e evidência;
-- painel de revisão humana e calibração;
+- provedor OpenAI/Azure plugável (chaves só na UI);
+- rubricas estruturadas e versionadas na UI;
+- painel de calibração e métricas de divergência;
 - tutor fundamentado no curso.
+
+## [0.4.0-alpha.0] - 2026-07-13
+
+### Adicionado
+
+- `INSTALL.md` para escolas (ZIP + SSH + checklist de aceite);
+- docs STATUS alinhados ao release atual;
+- habilitação demonstrável por atividade no piloto EBAC (site default permanece off).
+
+### Alterado
+
+- bump de versão Moodle plugin para `2026071310` / release `0.4.0-alpha.0`;
+- registro explícito do contrato de provedores (ainda sem provedor de produção).
+
+## [0.3.0-alpha.2] - 2026-07-13
+
+### Validado no piloto EBAC LMS (Moodle 4.5)
+
+- instalação SHA-pinned;
+- `diagnose.php --json` sem critical;
+- `default=0` e `allowaisuggestions=0`.
 
 ## [0.2.1-recovery] - 2026-07-13
 

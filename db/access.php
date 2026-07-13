@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Version information for the AI Tutoring assignment feedback plugin.
+ * Capabilities for AI Tutoring feedback.
  *
  * @package    assignfeedback_aitutoria
  * @copyright  2026 Edugital
@@ -24,8 +24,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026071310;
-$plugin->requires = 2024042200;
-$plugin->component = 'assignfeedback_aitutoria';
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.4.0-alpha.0';
+$capabilities = [
+    'assignfeedback/aitutoria:viewgovernance' => [
+        'riskbitmask' => RISK_PERSONAL,
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+];

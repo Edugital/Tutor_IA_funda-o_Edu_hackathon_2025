@@ -1,59 +1,45 @@
 # Estado consolidado
 
-**Versão:** `0.2.1-recovery`  
+**Versão:** `0.4.0-alpha.0`  
 **Maturidade:** alpha  
 **Política:** Human in Control  
-**Fonte canônica:** este repositório
+**Fonte canônica:** este repositório  
+**Piloto EBAC LMS:** https://alandantas.net/moodle_ebac
 
-## Implementado
+## Implementado (0.3.x → 0.4.0-alpha.0)
 
 - estrutura oficial `assignfeedback`;
-- configuração por tarefa;
+- configuração por tarefa + site (`default=0`, `allowaisuggestions=0`);
 - rubrica textual e versão;
-- feedback por grade;
-- sugestão de IA privada;
-- decisão humana explícita;
-- visualização pelo estudante;
-- integração textual com o livro de notas;
+- feedback por grade com decisão humana (aceitar / editar / rejeitar);
+- sugestão de IA privada (quando houver provedor);
+- visualização pelo estudante do feedback publicado;
 - Privacy API;
 - backup e restauração;
-- migração não destrutiva do legado conhecido;
-- idiomas inglês e português do Brasil;
-- teste da política de decisão;
-- validador estático;
-- pacote ZIP reproduzível;
-- instalação automatizada em Moodle 4.4/MariaDB;
-- instalação automatizada em Moodle 4.5/PostgreSQL;
-- PHP lint, PHPUnit, Behat, PHPDoc e savepoints em CI.
+- idiomas `en` + `pt_br`;
+- CLI `diagnose.php` / `governance_report.php`;
+- contrato `provider_interface` + registry (sem provedor de produção habilitado);
+- `INSTALL.md` orientado a escolas;
+- docs alinhados ao release (STATUS/CHANGELOG).
 
-## Não implementado
+## Não implementado (próximos 0.4.x)
 
-- provedor externo de IA;
-- fila assíncrona;
+- provedor externo de produção (OpenAI/Azure) plugável e configurável por UI;
+- fila assíncrona em carga real com métricas;
 - processamento de anexos;
-- rubrica estruturada;
-- avaliação por critério e evidência;
-- painel de calibração;
-- matriz institucional de competências;
-- tutor conversacional;
-- relatórios de custo, qualidade e risco.
+- editor de rubricas estruturadas na UI;
+- painel de calibração completo;
+- tutor conversacional fundamentado no curso.
 
-## Bloqueios para produção
+## Bloqueios para produção plena
 
-1. atualização sobre cópia sanitizada do banco legado real ainda não ensaiada;
-2. backup e restauração precisam de cenário automatizado com verificação de dados;
-3. Privacy API precisa de teste de banco específico;
-4. código instalado na VM antiga ainda não foi comparado integralmente;
-5. teste exploratório de professor e estudante ainda depende de staging;
-6. versão alpha não deve ser habilitada globalmente.
+1. Sem provedor de produção → sugestões IA não geram valor automático (fluxo humano OK).
+2. Alpha: não habilitar globalmente.
+3. Comparar sempre ZIP tagado vs cópia instalada (`diagnose` + SHA).
 
-## Critério para a próxima versão
+## Critério para liberar 0.4.0 estável
 
-A próxima versão só poderá aumentar a automação se:
-
-- o fluxo manual estiver integralmente testado;
-- a sugestão permanecer privada;
-- o professor tiver revisão, edição, rejeição e escalonamento;
-- toda saída estiver vinculada a proveniência;
-- não houver escrita automática de nota;
-- falha do provedor não interromper o Moodle.
+- provedor plugável com chaves só via UI admin;
+- fluxo professor/aluno testado em staging;
+- INSTALL escolas validado por terceiro;
+- zero escrita automática de nota.

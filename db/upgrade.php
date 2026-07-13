@@ -34,8 +34,6 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2026071300) {
-        // Create a canonical table instead of assuming the shape of any
-        // feedback table that may have existed only on the legacy server.
         $table = new xmldb_table('assignfeedback_aitutoria');
 
         if (!$dbman->table_exists($table)) {
@@ -61,8 +59,6 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
             $dbman->create_table($table);
         }
 
-        // Migrate the only legacy table whose schema is documented. Keep the
-        // source table untouched until a production migration is verified.
         $legacytable = new xmldb_table('assignfeedback_aitut_cfg');
         if ($dbman->table_exists($legacytable)) {
             $records = $DB->get_records('assignfeedback_aitut_cfg');
@@ -77,8 +73,6 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
                 ];
 
                 if (!empty($record->autograde)) {
-                    // Preserve evidence that autograde had been configured,
-                    // without enabling it in the recovery implementation.
                     $mapping['legacy_autograde_was_enabled'] = '1';
                 }
 
@@ -102,7 +96,6 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
     }
 
     if ($oldversion < 2026071301) {
-        // Rename the short-lived recovery candidate table, when present.
         $legacyrecoverytable = new xmldb_table('assignfeedback_aitut_fb');
         $canonicaltable = new xmldb_table('assignfeedback_aitutoria');
 
@@ -111,6 +104,139 @@ function xmldb_assignfeedback_aitutoria_upgrade(int $oldversion): bool {
         }
 
         upgrade_plugin_savepoint(true, 2026071301, 'assignfeedback', 'aitutoria');
+    }
+
+    if ($oldversion < 2026071302) {
+        $jobtable = new xmldb_table('assignfeedback_aitutoria_job');
+        if (!$dbman->table_exists($jobtable)) {
+            $jobtable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $jobtable->add_field('assignment', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $jobtable->add_field('grade', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $jobtable->add_field('status', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'queued');
+            $jobtable->add_field('idempotencykey', XMLDB_TYPE_CHAR, '64', null, XMLDB_NOTNULL);
+            $jobtable->add_field('provider', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $jobtable->add_field('model', XMLDB_TYPE_CHAR, '100', null, null);
+            $jobtable->add_field('promptversion', XMLDB_TYPE_CHAR, '50', null, null);
+            $jobtable->add_field('suggestiontext', XMLDB_TYPE_TEXT, null, null, null);
+            $jobtable->add_field('scoringjson', XMLDB_TYPE_TEXT, null, null, null);
+            $jobtable->add_field('attempts', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0');
+            $jobtable->add_field('maxattempts', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '3');
+            $jobtable->add_field('lasterror', XMLDB_TYPE_TEXT, null, null, null);
+            $jobtable->add_field('timeavailable', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $jobtable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $jobtable->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $jobtable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $jobtable->add_key('assignment', XMLDB_KEY_FOREIGN, ['assignment'], 'assign', ['id']);
+            $jobtable->add_key('grade', XMLDB_KEY_FOREIGN, ['grade'], 'assign_grades', ['id']);
+            $jobtable->add_index('idempotencykey', XMLDB_INDEX_UNIQUE, ['idempotencykey']);
+            $jobtable->add_index('statusavailable', XMLDB_INDEX_NOTUNIQUE, ['status', 'timeavailable']);
+            $jobtable->add_index('assignmentgrade', XMLDB_INDEX_NOTUNIQUE, ['assignment', 'grade']);
+            $dbman->create_table($jobtable);
+        }
+
+        $snapshottable = new xmldb_table('assignfeedback_aitutoria_snp');
+        if (!$dbman->table_exists($snapshottable)) {
+            $snapshottable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $snapshottable->add_field('jobid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $snapshottable->add_field('submissionhash', XMLDB_TYPE_CHAR, '64', null, XMLDB_NOTNULL);
+            $snapshottable->add_field('submissiontext', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+            $snapshottable->add_field('rubricjson', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+            $snapshottable->add_field('rubricversion', XMLDB_TYPE_CHAR, '50', null, XMLDB_NOTNULL);
+            $snapshottable->add_field('policyjson', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+            $snapshottable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $snapshottable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $snapshottable->add_key(
+                'jobid',
+                XMLDB_KEY_FOREIGN_UNIQUE,
+                ['jobid'],
+                'assignfeedback_aitutoria_job',
+                ['id']
+            );
+            $dbman->create_table($snapshottable);
+        }
+
+        $criteriontable = new xmldb_table('assignfeedback_aitutoria_crt');
+        if (!$dbman->table_exists($criteriontable)) {
+            $criteriontable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $criteriontable->add_field('jobid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $criteriontable->add_field('criterionkey', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $criteriontable->add_field('proposedlevel', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $criteriontable->add_field('rationale', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+            $criteriontable->add_field('evidencejson', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
+            $criteriontable->add_field('uncertainty', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, 'high');
+            $criteriontable->add_field('requireshuman', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1');
+            $criteriontable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $criteriontable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $criteriontable->add_key(
+                'jobid',
+                XMLDB_KEY_FOREIGN,
+                ['jobid'],
+                'assignfeedback_aitutoria_job',
+                ['id']
+            );
+            $criteriontable->add_index('jobcriterion', XMLDB_INDEX_UNIQUE, ['jobid', 'criterionkey']);
+            $dbman->create_table($criteriontable);
+        }
+
+        $audittable = new xmldb_table('assignfeedback_aitutoria_aud');
+        if (!$dbman->table_exists($audittable)) {
+            $audittable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $audittable->add_field('assignment', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $audittable->add_field('grade', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $audittable->add_field('jobid', XMLDB_TYPE_INTEGER, '10', null, null);
+            $audittable->add_field('action', XMLDB_TYPE_CHAR, '50', null, XMLDB_NOTNULL);
+            $audittable->add_field('actorid', XMLDB_TYPE_INTEGER, '10', null, null);
+            $audittable->add_field('payloadjson', XMLDB_TYPE_TEXT, null, null, null);
+            $audittable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $audittable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $audittable->add_key('assignment', XMLDB_KEY_FOREIGN, ['assignment'], 'assign', ['id']);
+            $audittable->add_key('grade', XMLDB_KEY_FOREIGN, ['grade'], 'assign_grades', ['id']);
+            $audittable->add_key(
+                'jobid',
+                XMLDB_KEY_FOREIGN,
+                ['jobid'],
+                'assignfeedback_aitutoria_job',
+                ['id']
+            );
+            $audittable->add_index('assignmentgrade', XMLDB_INDEX_NOTUNIQUE, ['assignment', 'grade']);
+            $audittable->add_index('action', XMLDB_INDEX_NOTUNIQUE, ['action']);
+            $dbman->create_table($audittable);
+        }
+
+        upgrade_plugin_savepoint(true, 2026071302, 'assignfeedback', 'aitutoria');
+    }
+
+    if ($oldversion < 2026071303) {
+        $humancriteriontable = new xmldb_table('assignfeedback_aitutoria_hcr');
+        if (!$dbman->table_exists($humancriteriontable)) {
+            $humancriteriontable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $humancriteriontable->add_field('assignment', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $humancriteriontable->add_field('grade', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $humancriteriontable->add_field('jobid', XMLDB_TYPE_INTEGER, '10', null, null);
+            $humancriteriontable->add_field('criterionkey', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $humancriteriontable->add_field('selectedlevel', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL);
+            $humancriteriontable->add_field('aiproposedlevel', XMLDB_TYPE_CHAR, '100', null, null);
+            $humancriteriontable->add_field('matchesai', XMLDB_TYPE_INTEGER, '1', null, null);
+            $humancriteriontable->add_field('reviewerid', XMLDB_TYPE_INTEGER, '10', null, null);
+            $humancriteriontable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $humancriteriontable->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $humancriteriontable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $humancriteriontable->add_key('assignment', XMLDB_KEY_FOREIGN, ['assignment'], 'assign', ['id']);
+            $humancriteriontable->add_key('grade', XMLDB_KEY_FOREIGN, ['grade'], 'assign_grades', ['id']);
+            $humancriteriontable->add_key(
+                'jobid',
+                XMLDB_KEY_FOREIGN,
+                ['jobid'],
+                'assignfeedback_aitutoria_job',
+                ['id']
+            );
+            $humancriteriontable->add_index('gradecriterion', XMLDB_INDEX_UNIQUE, ['grade', 'criterionkey']);
+            $humancriteriontable->add_index('assignmentgrade', XMLDB_INDEX_NOTUNIQUE, ['assignment', 'grade']);
+            $humancriteriontable->add_index('reviewerid', XMLDB_INDEX_NOTUNIQUE, ['reviewerid']);
+            $dbman->create_table($humancriteriontable);
+        }
+
+        upgrade_plugin_savepoint(true, 2026071303, 'assignfeedback', 'aitutoria');
     }
 
     return true;

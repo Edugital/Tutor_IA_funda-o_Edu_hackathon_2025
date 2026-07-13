@@ -35,6 +35,7 @@ final class decision_policy_test extends \advanced_testcase {
 
         $this->assertSame('Human feedback', $result['text']);
         $this->assertSame('manual', $result['decision']);
+        $this->assertSame('not_requested', $result['aistatus']);
     }
 
     /**
@@ -45,6 +46,7 @@ final class decision_policy_test extends \advanced_testcase {
 
         $this->assertSame('Reviewed suggestion', $result['text']);
         $this->assertSame('accepted_ai', $result['decision']);
+        $this->assertSame('accepted', $result['aistatus']);
     }
 
     /**
@@ -55,6 +57,37 @@ final class decision_policy_test extends \advanced_testcase {
 
         $this->assertSame('Edited by teacher', $result['text']);
         $this->assertSame('overridden_ai', $result['decision']);
+        $this->assertSame('overridden', $result['aistatus']);
+    }
+
+    /**
+     * Rejection keeps only human-authored feedback as publishable text.
+     */
+    public function test_explicit_rejection_never_publishes_suggestion(): void {
+        $result = decision_policy::resolve_review(
+            'Teacher feedback',
+            'AI suggestion',
+            decision_policy::ACTION_REJECT
+        );
+
+        $this->assertSame('Teacher feedback', $result['text']);
+        $this->assertSame('rejected_ai', $result['decision']);
+        $this->assertSame('rejected', $result['aistatus']);
+    }
+
+    /**
+     * Escalation permits an empty published feedback while recording review state.
+     */
+    public function test_escalation_does_not_publish_suggestion(): void {
+        $result = decision_policy::resolve_review(
+            '',
+            'AI suggestion',
+            decision_policy::ACTION_ESCALATE
+        );
+
+        $this->assertSame('', $result['text']);
+        $this->assertSame('escalated', $result['decision']);
+        $this->assertSame('escalated', $result['aistatus']);
     }
 
     /**
@@ -64,5 +97,14 @@ final class decision_policy_test extends \advanced_testcase {
         $this->expectException(\coding_exception::class);
 
         decision_policy::resolve('Text', '', true);
+    }
+
+    /**
+     * Unknown review actions are rejected.
+     */
+    public function test_unknown_review_action_is_rejected(): void {
+        $this->expectException(\invalid_parameter_exception::class);
+
+        decision_policy::resolve_review('Text', 'Suggestion', 'unknown');
     }
 }
