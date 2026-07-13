@@ -27,26 +27,80 @@ namespace assignfeedback_aitutoria\local;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class decision_policy {
+    /** Human-authored or edited feedback. */
+    public const ACTION_MANUAL = 'manual';
+
+    /** Explicit acceptance of the private suggestion. */
+    public const ACTION_ACCEPT = 'accept';
+
+    /** Explicit rejection of the private suggestion. */
+    public const ACTION_REJECT = 'reject';
+
+    /** Escalation for additional human review. */
+    public const ACTION_ESCALATE = 'escalate';
+
     /**
-     * Resolve the feedback to publish.
+     * Resolve the legacy boolean acceptance contract.
      *
      * @param string $humantext Human-authored or human-edited feedback.
      * @param string $suggestion Optional AI suggestion.
      * @param bool $acceptsuggestion Explicit human acceptance.
-     * @return array{text: string, decision: string}
+     * @return array{text: string, decision: string, aistatus: string}
      */
     public static function resolve(string $humantext, string $suggestion, bool $acceptsuggestion): array {
+        return self::resolve_review(
+            $humantext,
+            $suggestion,
+            $acceptsuggestion ? self::ACTION_ACCEPT : self::ACTION_MANUAL
+        );
+    }
+
+    /**
+     * Resolve a complete Human in Control review action.
+     *
+     * @param string $humantext Human-authored or human-edited feedback.
+     * @param string $suggestion Optional AI suggestion.
+     * @param string $action Review action.
+     * @return array{text: string, decision: string, aistatus: string}
+     */
+    public static function resolve_review(string $humantext, string $suggestion, string $action): array {
         $humantext = trim($humantext);
         $suggestion = trim($suggestion);
+        $action = trim($action);
 
-        if ($acceptsuggestion) {
-            if ($suggestion === '') {
-                throw new \coding_exception('An AI suggestion cannot be accepted when no suggestion is available.');
-            }
+        if (!in_array(
+            $action,
+            [self::ACTION_MANUAL, self::ACTION_ACCEPT, self::ACTION_REJECT, self::ACTION_ESCALATE],
+            true
+        )) {
+            throw new \invalid_parameter_exception('Unknown Human in Control review action.');
+        }
 
+        if ($action !== self::ACTION_MANUAL && $suggestion === '') {
+            throw new \coding_exception('An AI review action requires an available suggestion.');
+        }
+
+        if ($action === self::ACTION_ACCEPT) {
             return [
                 'text' => $suggestion,
                 'decision' => 'accepted_ai',
+                'aistatus' => 'accepted',
+            ];
+        }
+
+        if ($action === self::ACTION_REJECT) {
+            return [
+                'text' => $humantext,
+                'decision' => 'rejected_ai',
+                'aistatus' => 'rejected',
+            ];
+        }
+
+        if ($action === self::ACTION_ESCALATE) {
+            return [
+                'text' => $humantext,
+                'decision' => 'escalated',
+                'aistatus' => 'escalated',
             ];
         }
 
@@ -54,12 +108,14 @@ final class decision_policy {
             return [
                 'text' => $humantext,
                 'decision' => 'overridden_ai',
+                'aistatus' => 'overridden',
             ];
         }
 
         return [
             'text' => $humantext,
             'decision' => 'manual',
+            'aistatus' => 'not_requested',
         ];
     }
 }
