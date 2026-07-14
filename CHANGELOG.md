@@ -8,13 +8,52 @@ O formato segue os princípios de Keep a Changelog e versionamento semântico, a
 
 ### Planejado
 
-- testes adicionais de banco e backup;
-- rubricas estruturadas e versionadas;
-- processamento assíncrono e idempotente;
-- abstração de provedores;
-- avaliação por critério e evidência;
-- painel de revisão humana e calibração;
-- tutor fundamentado no curso.
+- provedor OpenAI/Azure plugável adicional;
+- rubricas estruturadas e versionadas na UI;
+- painel de calibração e métricas de divergência;
+- tutor fundamentado no curso;
+- diretório oficial Moodle.org.
+
+## [0.5.0-hic] - 2026-07-14
+
+### Adicionado
+
+- providers **GLM** e **Anthropic** plugáveis;
+- `generate.php` com confirmação humana (`confirm` + sesskey);
+- `request_factory` e registro de provedores;
+- `docs/FUNDING_AND_ORIGIN.md` e `docs/ABOUT.md` (cadeia Fundação Itaú → Instituto Saber → EduHackathon 2025);
+- CLI `queue_assessment.php`.
+
+### Alterado
+
+- release `0.5.0-hic` / version `2026071400`;
+- README alinhado ao estado real HIC + piloto EBAC (substitui narrativa `0.2.1-recovery` sem provider).
+
+### Validado
+
+- piloto EBAC LMS Moodle 4.5.12+ com GLM operacional;
+- política HIC intacta (`default=0`, `allowaisuggestions=0` no site).
+
+## [0.4.0-alpha.0] - 2026-07-13
+
+### Adicionado
+
+- `INSTALL.md` para escolas (ZIP + SSH + checklist de aceite);
+- docs STATUS alinhados ao release atual;
+- habilitação demonstrável por atividade no piloto EBAC (site default permanece off).
+
+### Alterado
+
+- bump de versão Moodle plugin para `2026071310` / release `0.4.0-alpha.0`;
+- registro explícito do contrato de provedores (ainda sem provedor de produção).
+
+## [0.3.0-alpha.2] - 2026-07-13
+
+### Validado no piloto EBAC LMS (Moodle 4.5)
+
+- instalação SHA-pinned;
+- `diagnose.php --json` sem critical;
+- `default=0` e `allowaisuggestions=0`.
 
 ## [0.2.1-recovery] - 2026-07-13
 

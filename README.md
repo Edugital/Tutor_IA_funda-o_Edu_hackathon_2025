@@ -1,101 +1,63 @@
-# Tutor IA para Moodle
+# Tutor IA para Moodle (`assignfeedback_aitutoria`)
 
-Plugin aberto de feedback e tutoria assistida por inteligência artificial para Moodle, orientado por rubricas, competências, evidências e controle humano.
+Plugin de feedback e tutoria assistida por IA para tarefas Moodle, com política **Human in Control (HIC)**: a IA sugere; o professor decide.
 
-## Componente Moodle
+| Campo | Valor |
+|-------|-------|
+| Componente | `assignfeedback_aitutoria` |
+| Release | **`0.5.0-hic`** |
+| Maturidade | alpha |
+| Moodle mínimo | 4.4 (validado 4.5 LTS) |
+| Path | `mod/assign/feedback/aitutoria` |
+| Piloto | [EBAC LMS](https://alandantas.net/moodle_ebac) |
 
-```text
-assignfeedback_aitutoria
-```
+## Origem e financiamento
 
-O diretório raiz deste repositório corresponde a:
+Cadeia documentada em [`docs/FUNDING_AND_ORIGIN.md`](docs/FUNDING_AND_ORIGIN.md) e [`docs/ABOUT.md`](docs/ABOUT.md):
 
-```text
-<Moodle>/mod/assign/feedback/aitutoria
-```
+**Fundação Itaú** (edital *Inteligência Artificial para a Educação*) → **Instituto Saber de Desenvolvimento Social e Educacional** (projeto selecionado) → **EduHackathon 2025** (Instituto Saber Social + EBAC + Edugital) → este plugin.
 
-## Estado do produto
+## Human in Control (garantias)
 
-**Versão:** `0.2.1-recovery`  
-**Maturidade:** alpha  
-**Moodle mínimo:** 4.4  
-**Política:** Human in Control
+1. A IA **não** escreve nota numérica.
+2. Sugestões ficam privadas até decisão humana explícita (`confirm=1` + sesskey).
+3. O professor pode aceitar, editar ou substituir a sugestão.
+4. Falha/ausência de IA não bloqueia avaliação manual.
+5. Automação **desligada por padrão** (`default=0`, `allowaisuggestions=0`).
+6. Provedores plugáveis — sem lock-in de fornecedor.
 
-Esta baseline foi recuperada de uma implementação legada e reorganizada para se tornar instalável, auditável e evolutiva. Ela ainda não contém integração com provedor externo de IA.
+## O que esta versão entrega
 
-## O que já funciona
+- Endpoints de geração com confirmação humana (`generate.php`).
+- Providers plugáveis: **GLM** (operacional no piloto) e **Anthropic** (quota limitada no lab).
+- Registro de provedores (`provider_registry`) + `request_factory`.
+- CLI `diagnose.php --json` e fila `cli/queue_assessment.php`.
+- Privacy API, backup/restore, pt_br + en.
+- Instalação SHA/tag pinned (nunca `main`/HEAD em produção).
 
-- configuração por atividade;
-- rubrica textual e versão da rubrica;
-- feedback manual por avaliação;
-- armazenamento separado de sugestão de IA ainda não publicada;
-- aceitação explícita ou substituição da sugestão pelo professor;
-- feedback visível ao estudante;
-- sincronização textual com o livro de notas;
-- Privacy API do Moodle;
-- backup e restauração de cursos;
-- migração não destrutiva da configuração legada documentada;
-- português do Brasil e inglês;
-- testes da política determinística de decisão humana;
-- validação estática e empacotamento ZIP reproduzível;
-- instalação automatizada em Moodle 4.4/MariaDB e Moodle 4.5/PostgreSQL;
-- PHPUnit, Behat, savepoints, PHPDoc e lint executados pelo Moodle Plugin CI.
+## Instalação (resumo)
 
-## Garantias Human in Control
+1. Baixe o release ZIP `aitutoria/` na raiz do pacote (ver GitHub Releases).
+2. Copie para `mod/assign/feedback/aitutoria` **ou** instale via UI de plugins.
+3. `php admin/cli/upgrade.php --non-interactive`
+4. Configure provedor e chaves **somente** na UI Moodle (nunca em git).
+5. Mantenha site default off; habilite por atividade no piloto.
 
-1. A IA não escreve nota numérica.
-2. Sugestões ficam privadas até decisão humana explícita.
-3. O professor pode aceitar, editar ou substituir integralmente a sugestão.
-4. Falha ou ausência de IA não bloqueia a avaliação manual.
-5. A automação é desativada por padrão.
-6. A implementação não depende de um fornecedor específico.
+Runbook completo: [`INSTALL.md`](INSTALL.md) · checklist: [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
 
-## Instalação resumida
-
-1. Gere ou baixe o pacote `assignfeedback_aitutoria-*.zip`.
-2. No Moodle, acesse **Administração do site → Plugins → Instalar plugins**.
-3. Instale o ZIP ou copie o conteúdo para:
-
-```text
-mod/assign/feedback/aitutoria
-```
-
-4. Execute a atualização do Moodle.
-5. Mantenha o plugin desativado por padrão até concluir os testes em staging.
-
-Consulte [docs/INSTALLATION.md](docs/INSTALLATION.md) para o procedimento completo.
-
-## Desenvolvimento
+## Diagnóstico
 
 ```bash
-python3 tools/validate.py
-bash tools/package.sh
+php mod/assign/feedback/aitutoria/cli/diagnose.php --json
 ```
 
-Em uma instalação completa do Moodle:
-
-```bash
-vendor/bin/phpunit --testsuite assignfeedback_aitutoria_testsuite
-```
-
-## Próximas frentes
-
-- teste de atualização sobre cópia sanitizada do banco legado real;
-- rubricas estruturadas e versionadas;
-- motor assíncrono e idempotente;
-- avaliação por critério, evidências e incerteza;
-- painel de revisão e calibração;
-- abstração de provedores;
-- tutor fundamentado nos conteúdos autorizados do curso;
-- governança institucional de competências, custos e privacidade;
-- implantação simplificada para escolas públicas.
-
-Consulte [docs/BACKLOG.md](docs/BACKLOG.md).
-
-## Segurança e privacidade
-
-Não envie dados reais de estudantes, chaves de API, dumps ou credenciais para o repositório. Vulnerabilidades devem seguir [SECURITY.md](SECURITY.md).
+Esperado: `status=ok`, sem `critical`.
 
 ## Licença
 
-GPL v3 ou posterior. Consulte [LICENSE](LICENSE).
+GNU GPL v3 or later — ver [`LICENSE`](LICENSE).
+
+## Relacionados
+
+- Pacote white-label: [ebac-lms-blueprint](https://github.com/Edugital/ebac-lms-blueprint) (`v1.2.0-revenda`)
+- Issues: epic HIC [#3](https://github.com/Edugital/Tutor_IA_funda-o_Edu_hackathon_2025/issues/3) · install P0 [#2](https://github.com/Edugital/Tutor_IA_funda-o_Edu_hackathon_2025/issues/2)
