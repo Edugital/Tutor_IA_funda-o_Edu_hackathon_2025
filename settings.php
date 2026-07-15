@@ -64,6 +64,7 @@ $settings->add(new admin_setting_configselect(
     [
         'glm' => 'GLM / Zhipu (EBAC)',
         'anthropic' => 'Anthropic Claude (EBAC)',
+        'openai' => 'OpenAI (stub)',
     ]
 ));
 
@@ -103,6 +104,29 @@ $settings->add(new admin_setting_configtext(
     new lang_string('anthropicmodel_help', 'assignfeedback_aitutoria'),
     'claude-sonnet-4-20250514',
     PARAM_TEXT
+));
+
+$settings->add(new admin_setting_configpasswordunmask(
+    'assignfeedback_aitutoria/openaiapikey',
+    new lang_string('openaiapikey', 'assignfeedback_aitutoria'),
+    new lang_string('openaiapikey_help', 'assignfeedback_aitutoria'),
+    ''
+));
+
+$settings->add(new admin_setting_configtext(
+    'assignfeedback_aitutoria/openaimodel',
+    new lang_string('openaimodel', 'assignfeedback_aitutoria'),
+    new lang_string('openaimodel_help', 'assignfeedback_aitutoria'),
+    'gpt-4o-mini',
+    PARAM_TEXT
+));
+
+$settings->add(new admin_setting_configtext(
+    'assignfeedback_aitutoria/openaiendpoint',
+    new lang_string('openaiendpoint', 'assignfeedback_aitutoria'),
+    new lang_string('openaiendpoint_help', 'assignfeedback_aitutoria'),
+    'https://api.openai.com/v1/chat/completions',
+    PARAM_URL
 ));
 
 $settings->add(new admin_setting_configtext(

@@ -8,11 +8,32 @@ O formato segue os princípios de Keep a Changelog e versionamento semântico, a
 
 ### Planejado
 
-- provedor OpenAI/Azure plugável adicional;
+- implementação completa do provedor OpenAI (hoje stub);
 - rubricas estruturadas e versionadas na UI;
-- painel de calibração e métricas de divergência;
 - tutor fundamentado no curso;
-- diretório oficial Moodle.org.
+- submissão Moodle.org após UAT + checklist.
+
+## [0.6.0-rfp] - 2026-07-15
+
+### Adicionado
+
+- painel de diff no grader (sugestão IA × feedback atual) com classes `.aitutoria-diff`;
+- labels HIC mais claras no select: Aceitar / Editar (manual) / Descartar / Escalar;
+- `calibration.php` — taxas 7d/30d (`accepted_ai`, `overridden_ai`, `rejected_ai`, `escalated`) via `governance_report::build`;
+- link Calibração a partir de `report.php`;
+- CLI `cli/seed_calibration_demo.php` (dry-run; `--execute` aplica decisões em jobs completos existentes);
+- stub `openai_provider` + settings + decision YAML `blueprint/plugins/decision/assignfeedback_aitutoria_openai.yml`;
+- `MOODLEORG_SUBMISSION_CHECKLIST.md`;
+- CI mínimo `.github/workflows/moodle-ci.yml` (Moodle 4.4 / 4.5).
+
+### Alterado
+
+- release `0.6.0-rfp` / version `2026071501`;
+- strings en + pt_br para diff, calibração e OpenAI stub.
+
+### Política
+
+- HIC intacta: `decision_policy::ACTION_ACCEPT` continua sendo o único caminho que copia a sugestão para o feedback publicado; defaults de site permanecem off no piloto.
 
 ## [0.5.0-hic] - 2026-07-14
 

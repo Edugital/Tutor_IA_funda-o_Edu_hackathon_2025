@@ -58,10 +58,18 @@ $downloadurl = new moodle_url(
     $urlparams + ['format' => 'json']
 );
 
+$calibrationurl = new moodle_url('/mod/assign/feedback/aitutoria/calibration.php', $urlparams);
+
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('governancereport', 'assignfeedback_aitutoria'));
 echo html_writer::div(
     html_writer::link(
+        $calibrationurl,
+        get_string('opencalibrationreport', 'assignfeedback_aitutoria'),
+        ['class' => 'btn btn-primary mb-3 mr-2']
+    )
+    . ' '
+    . html_writer::link(
         $downloadurl,
         get_string('downloadreportjson', 'assignfeedback_aitutoria'),
         ['class' => 'btn btn-secondary mb-3']

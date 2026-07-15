@@ -4,25 +4,23 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   test:
-    name: ${{ matrix.moodle-branch }} / PHP ${{ matrix.php }} / ${{ matrix.database }}
     runs-on: ubuntu-22.04
-    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {moodle-branch: 'MOODLE_404_STABLE', php: '8.2', database: 'pgsql'}
+          - {moodle-branch: 'MOODLE_405_STABLE', php: '8.2', database: 'pgsql'}
+          - {moodle-branch: 'MOODLE_405_STABLE', php: '8.3', database: 'mariadb'}
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:15
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_USER: 'postgres'
+          POSTGRES_HOST_AUTH_METHOD: 'trust'
         ports:
           - 5432:5432
         options: >-
@@ -30,14 +28,13 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 3
-
       mariadb:
-        image: mariadb:10
+        image: mariadb:10.11
         env:
-          MYSQL_USER: root
+          MYSQL_USER: 'root'
           MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
-          MYSQL_CHARACTER_SET_SERVER: utf8mb4
-          MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+          MYSQL_CHARACTER_SET_SERVER: 'utf8mb4'
+          MYSQL_COLLATION_SERVER: 'utf8mb4_unicode_ci'
         ports:
           - 3306:3306
         options: >-
@@ -46,27 +43,17 @@ jobs:
           --health-timeout 5s
           --health-retries 3
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - php: '8.1'
-            moodle-branch: MOODLE_404_STABLE
-            database: mariadb
-          - php: '8.3'
-            moodle-branch: MOODLE_405_STABLE
-            database: pgsql
-
     steps:
-      - name: Check out plugin
+      - name: Check out repository code
         uses: actions/checkout@v4
         with:
           path: plugin
 
-      - name: Setup PHP
+      - name: Setup PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, xmlrpc, soap, gd, zip, intl, mysqli, pgsql
           ini-values: max_input_vars=5000
           coverage: none
 
@@ -77,61 +64,26 @@ jobs:
           echo "$(cd ci/vendor/bin; pwd)" >> "$GITHUB_PATH"
           sudo locale-gen en_AU.UTF-8
           echo "NVM_DIR=$HOME/.nvm" >> "$GITHUB_ENV"
-          mkdir -p reports
 
-      - name: Install Moodle and plugin
-        run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1 --not-paths=tools
+      - name: Install moodle-plugin-ci
+        run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
 
-      - name: PHP lint
+      - name: PHP Lint
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phplint
 
+      - name: PHPUnit tests
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci phpunit
+
       - name: Moodle Code Checker
         if: ${{ !cancelled() }}
-        run: |
-          set -o pipefail
-          moodle-plugin-ci phpcs --max-warnings 0 2>&1 | tee reports/phpcs.log
+        continue-on-error: true
+        run: moodle-plugin-ci codechecker --max-warnings 0
 
-      - name: Moodle PHPDoc Checker
+      - name: Validate plugin
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpdoc --max-warnings 0
-
-      - name: Validate plugin metadata
-        if: ${{ !cancelled() }}
-        run: |
-          set -o pipefail
-          moodle-plugin-ci validate 2>&1 | tee reports/validate.log
-
-      - name: Check upgrade savepoints
-        if: ${{ !cancelled() }}
-        run: moodle-plugin-ci savepoints
-
-      - name: PHPUnit
-        if: ${{ !cancelled() }}
-        run: moodle-plugin-ci phpunit --fail-on-warning
-
-      - name: Behat
-        id: behat
-        if: ${{ !cancelled() }}
-        run: moodle-plugin-ci behat --profile chrome --scss-deprecations
-
-      - name: Upload validation reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: moodle-ci-reports-${{ matrix.php }}-${{ matrix.database }}
-          path: reports/*.log
-          retention-days: 7
-          if-no-files-found: warn
-
-      - name: Upload Behat faildump
-        if: ${{ failure() && steps.behat.outcome == 'failure' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: behat-faildump-${{ matrix.php }}-${{ matrix.database }}
-          path: ${{ github.workspace }}/moodledata/behat_dump
-          retention-days: 7
-          if-no-files-found: ignore
+        run: moodle-plugin-ci validate

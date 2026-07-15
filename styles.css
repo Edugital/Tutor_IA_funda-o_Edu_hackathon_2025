@@ -1,0 +1,59 @@
+/**
+ * Grader diff panel for unpublished AI suggestions vs current feedback.
+ *
+ * @package    assignfeedback_aitutoria
+ * @copyright  2026 Edugital
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+.aitutoria-diff {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 0.5rem 0 1rem;
+    width: 100%;
+}
+
+.aitutoria-diff__col {
+    flex: 1 1 280px;
+    min-width: 0;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background: #f8f9fa;
+    padding: 0.75rem 1rem;
+}
+
+.aitutoria-diff__col--ai {
+    border-left: 3px solid #5b35f5;
+}
+
+.aitutoria-diff__col--current {
+    border-left: 3px solid #00c2a8;
+}
+
+.aitutoria-diff__title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+}
+
+.aitutoria-diff__body {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    max-height: 18rem;
+    overflow: auto;
+}
+
+.aitutoria-diff__empty {
+    font-style: italic;
+}
+
+.aitutoria-calibration-period {
+    margin-bottom: 1.5rem;
+}
+
+.aitutoria-calibration-period h3 {
+    margin-top: 1.25rem;
+}

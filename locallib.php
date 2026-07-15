@@ -309,24 +309,55 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             }
         }
 
+        $currentfeedback = $record ? (string) $record->feedbacktext : '';
         if ($record && $record->aistatus === 'ready' && trim((string) $record->aisuggestion) !== '') {
+            $suggestionhtml = format_text(
+                $record->aisuggestion,
+                FORMAT_PLAIN,
+                ['context' => $this->assignment->get_context()]
+            );
+            $currenthtml = $currentfeedback !== ''
+                ? format_text(
+                    $currentfeedback,
+                    FORMAT_PLAIN,
+                    ['context' => $this->assignment->get_context()]
+                )
+                : html_writer::span(
+                    get_string('diffcurrentempty', 'assignfeedback_aitutoria'),
+                    'aitutoria-diff__empty text-muted'
+                );
+            $diffpanel = html_writer::div(
+                html_writer::div(
+                    html_writer::tag('h4', get_string('diffaisuggestion', 'assignfeedback_aitutoria'), ['class' => 'aitutoria-diff__title'])
+                        . html_writer::div($suggestionhtml, 'aitutoria-diff__body'),
+                    'aitutoria-diff__col aitutoria-diff__col--ai'
+                )
+                . html_writer::div(
+                    html_writer::tag('h4', get_string('diffcurrentfeedback', 'assignfeedback_aitutoria'), ['class' => 'aitutoria-diff__title'])
+                        . html_writer::div($currenthtml, 'aitutoria-diff__body'),
+                    'aitutoria-diff__col aitutoria-diff__col--current'
+                ),
+                'aitutoria-diff'
+            );
+            $mform->addElement(
+                'static',
+                'assignfeedback_aitutoria_diff_panel',
+                get_string('diffcompare', 'assignfeedback_aitutoria'),
+                $diffpanel
+            );
             $mform->addElement(
                 'static',
                 'assignfeedback_aitutoria_suggestion_display',
                 get_string('aisuggestion', 'assignfeedback_aitutoria'),
-                format_text(
-                    $record->aisuggestion,
-                    FORMAT_PLAIN,
-                    ['context' => $this->assignment->get_context()]
-                )
+                $suggestionhtml
             );
             $mform->addElement(
                 'select',
                 'assignfeedback_aitutoria_reviewaction',
                 get_string('reviewaction', 'assignfeedback_aitutoria'),
                 [
-                    decision_policy::ACTION_MANUAL => get_string('reviewaction_manual', 'assignfeedback_aitutoria'),
                     decision_policy::ACTION_ACCEPT => get_string('reviewaction_accept', 'assignfeedback_aitutoria'),
+                    decision_policy::ACTION_MANUAL => get_string('reviewaction_manual', 'assignfeedback_aitutoria'),
                     decision_policy::ACTION_REJECT => get_string('reviewaction_reject', 'assignfeedback_aitutoria'),
                     decision_policy::ACTION_ESCALATE => get_string('reviewaction_escalate', 'assignfeedback_aitutoria'),
                 ]
@@ -339,7 +370,7 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
             $mform->setDefault('assignfeedback_aitutoria_reviewaction', decision_policy::ACTION_MANUAL);
         }
 
-        $data->assignfeedback_aitutoria_feedback = $record ? (string) $record->feedbacktext : '';
+        $data->assignfeedback_aitutoria_feedback = $currentfeedback;
         $mform->addElement(
             'textarea',
             'assignfeedback_aitutoria_feedback',
@@ -349,7 +380,7 @@ class assign_feedback_aitutoria extends assign_feedback_plugin {
         $mform->setType('assignfeedback_aitutoria_feedback', PARAM_RAW);
         $mform->setDefault(
             'assignfeedback_aitutoria_feedback',
-            $record ? (string) $record->feedbacktext : ''
+            $currentfeedback
         );
         $mform->addHelpButton(
             'assignfeedback_aitutoria_feedback',

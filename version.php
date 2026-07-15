@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026071400;
+$plugin->version = 2026071501;
 $plugin->requires = 2024042200;
 $plugin->component = 'assignfeedback_aitutoria';
 $plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.5.0-hic';
+$plugin->release = '0.6.0-rfp';

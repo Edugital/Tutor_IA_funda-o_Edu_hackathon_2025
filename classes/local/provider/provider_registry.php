@@ -42,6 +42,9 @@ final class provider_registry {
         if ($name === 'anthropic') {
             return new anthropic_provider();
         }
+        if ($name === 'openai') {
+            return new openai_provider();
+        }
         if ($name === 'fixture' && defined('PHPUNIT_TEST') && PHPUNIT_TEST) {
             return new fixture_provider();
         }
@@ -67,6 +70,9 @@ final class provider_registry {
         if (isset($available['anthropic'])) {
             return 'anthropic';
         }
+        if (isset($available['openai'])) {
+            return 'openai';
+        }
         return '';
     }
 
@@ -85,6 +91,9 @@ final class provider_registry {
         }
         if (trim((string) get_config('assignfeedback_aitutoria', 'anthropicapikey')) !== '') {
             $out['anthropic'] = 'Anthropic Claude (EBAC)';
+        }
+        if (trim((string) get_config('assignfeedback_aitutoria', 'openaiapikey')) !== '') {
+            $out['openai'] = 'OpenAI (stub — configure production calls)';
         }
         return $out;
     }
